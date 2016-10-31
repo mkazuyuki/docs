@@ -1,4 +1,4 @@
-# Howto setup iSCSI Target Cluster on EXPRESSCLUSTE for Linux wtih block device back store 
+# Howto setup iSCSI Target Cluster on EXPRESSCLUSTER for Linux wtih block device back store 
 
 ----
 
@@ -63,9 +63,11 @@ Add dummy failove-group to create NMP device. (NMP device is equal to mirror-dis
 - Click [Next]
 - Click [Next]
 - Set
+
 		[Mount Point] as [/mnt]
 		[Data Partition Device Name] e.g. *[/dev/sdb2]*
 		[Clsuter Partition Device Name] e.g. *[/dev/sdb1]*
+
 - Click [Finish]
 
 Add the failover-group for controlling NMP device and iSCSI Target service.
@@ -93,9 +95,7 @@ Add the failover-group for controlling NMP device and iSCSI Target service.
 
 - Click [OK]
 - Click [Add] and add  FIP resource.
-
 - Click [Finish]
-
 - Click [File] > [Apply Configuration]
 
 *Note* : Do not start any failover-group here for following procedure.
