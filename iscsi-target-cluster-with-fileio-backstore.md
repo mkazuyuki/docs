@@ -16,18 +16,18 @@ This text descrives how to create iSCSI Target cluster (with fileio backstore) o
 
 ## Nodes configuration
 
-| Role of the node		 | Name    |
-|--------------------------------|---------|
-| Primary iSCSI Target Node	 | node-t1 |
-| Secondary iSCSI Target Node	 | node-t2 |
-| Primarry iSCSI Initiator Node  | node-i1 |
-| Secondary iSCSI Initiator Node | node-i2 |
+| Role of the node		 | Host name | IP address      |
+|--------------------------------|-----------|-----------------|
+| Primary iSCSI Target Node	 | node-t1   | 192.168.137.131 |
+| Secondary iSCSI Target Node	 | node-t2   | 192.168.137.132 |
+| Primarry iSCSI Initiator Node  | node-i1   ||
+| Secondary iSCSI Initiator Node | node-i2   ||
 
 ## Parameters
 
 | Cluster Resources	   | Value			|
 |--------------------------|----------------------------|
-| FIP			   | 192.168.137.134		|
+| FIP			   | 192.168.137.130		|
 | Cluster Partition	   | /dev/sdb1			|
 | Data Partition	   | /dev/sdb2			|
 | WWN of iSCSI Target	   | iqn.2016-10.test.target:t1 |
@@ -61,15 +61,15 @@ On both iSCSI Target Nodes,
 On the client PC,
 
 - Open EXPRESSCLUSTER Builder ( http://[IP of a host]:29003/ )
-- Configure the cluster which have no failover-group with no group resource.
+- Configure the cluster which have no failover-group.
 
-Add dummy failove-group to create NMP device. (NMP device is equal to mirror-disk device which will be provided as iSCSI Target device and will be accessed by iSCSI Initiator)
+Add the failover-group for controlling iSCSI Target service.
 
 - [Cluster Properties] > [Interconnect] tab > set one of [MDC] as [mdc1]
 - Right click [Groups] in left pane then click [Add Group]
-- Set [Name] as *[failover-dummy]* then click [Next] (This failover group is configured just for preparing MD resource)
+- Set [Name] as [*failover-iscsi*] then click [Next]
 - Click [Next]
-- Set [Startup Attribute] as [Manual Startup] then click [Next]
+- Click [Next]
 - Click [Add]
 - Select [Type] as [mirror disk resource], set [Name] as [md1] then click [Next]
 - Click [Next]
@@ -77,16 +77,10 @@ Add dummy failove-group to create NMP device. (NMP device is equal to mirror-dis
 - Set
 
 		[Mount Point] as [/mnt]
-		[Data Partition Device Name] e.g. *[/dev/sdb2]*
-		[Clsuter Partition Device Name] e.g. *[/dev/sdb1]*
+		[Data Partition Device Name] as [ /dev/sdb2 ]
+		[Clsuter Partition Device Name] as [ /dev/sdb1 ]
 
-- Click [Finish]
-
-Add the failover-group for controlling NMP device and iSCSI Target service.
-- Right click [Groups] in left pane then click [Add Group]
-- Set [Name] as *[failover-iscsi]* then click [Next]
-- Click [Next]
-- Click [Next]
+- Click [OK]
 - Click [Add]
 - Select [Type] as [execute resource] then click [Next]
 - Click [Next]
@@ -94,7 +88,6 @@ Add the failover-group for controlling NMP device and iSCSI Target service.
 - Select start.sh then click [Edit]. Add below lines.
 
 		echo "Starting iSCSI Target"
-		clpmdctrl -a -nomount md1
 		systemctl start target
 		echo "Started  iSCSI Target"
 
@@ -102,40 +95,35 @@ Add the failover-group for controlling NMP device and iSCSI Target service.
 
 		echo "Stopping iSCSI Target"
 		systemctl stop target
-		clpmdctrl -d md1
-		echo "Stoped   iSCSI Target"
+		echo "Stopped   iSCSI Target"
 
 - Click [OK]
-- Click [Add] and add  FIP resource.
+
+<!--
+- Click [Add]
+- Select [Type] as [floatin IP resource] then click [Next]
+- Set floating IP address as [ 192.168.137.130 ] 
+- Click [OK]
+-->
+
 - Click [Finish]
 - Click [File] > [Apply Configuration]
+- Reboot node-t1, node-t2 and wait for the completion of starting of *failover-iscsi*
 
-*Note* : Do not start any failover-group here for following procedure.
+On node-t1, prepare block device for iSCSI Target and create iSCSI Target
 
-----
-On node-t1, prepare block device for iSCSI Target
-
-- Initialize the mirror disk resource
-
-		# clpmdctrl -f cent72-1 md1
-
-- Wait for completion of mirror disk recovery ("recovery" means initialization in this situation)
-
-		# clpmdstat -m md1
-
-- Activate the mirror disk without mount.
-
-		# clpmdctrl -a -nomount md1
-
-On node-t1, Creating iSCSI Target
-
-- Assuming the device name of the mirror disk resource as "/dev/NMP1" and the cluster partition as "/dev/sdb1". (the first mirror-disk resource of the cluster always named as "NMP1")
+- Start (iSCSI) target configuration tool
 
 		# targetcli
 
 - Create [ec-dp] as backstore
 
-		/> backstores/block create ec-dp /dev/NMP1
+================================
+<!-- To be revised from here -->
+================================
+
+		/> backstores/fileio create ec-dp /dev/NMP1
+
 
 - Create WWN
 
