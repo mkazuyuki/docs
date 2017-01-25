@@ -50,8 +50,8 @@ On both iSCSI Target Nodes,
 
 		# yum install targetcli targetd
 		# rpm -ivh expresscls.*.rpm
-		# clplcnsc -i [*base-license-file*] -p BASE33
-		# clplcnsc -i [*replicator-license-file*] -p REPL33
+		# clplcnsc -i [base-license-file] -p BASE33
+		# clplcnsc -i [replicator-license-file] -p REPL33
 
 ### Configuring iSCSI Target Cluster
 
@@ -72,10 +72,9 @@ Add the failover-group for controlling iSCSI Target service.
 - Click [Next]
 - Click [Next]
 - Set
-
-		[Mount Point] as [/mnt]
-		[Data Partition Device Name] as [ /dev/sdb2 ]
-		[Clsuter Partition Device Name] as [ /dev/sdb1 ]
+	- [Mount Point] as [/mnt]
+	- [Data Partition Device Name] as [ /dev/sdb2 ]
+	- [Clsuter Partition Device Name] as [ /dev/sdb1 ]
 
 - Click [OK]
 - Click [Add]
@@ -96,7 +95,7 @@ Add the failover-group for controlling iSCSI Target service.
 
 - Click [OK]
 - Click [Add]
-- Select [Type] as [floatin IP resource] then click [Next]
+- Select [Type] as [floating IP resource] then click [Next]
 - Set floating IP address as [ 192.168.137.130 ] 
 - Click [OK]
 - Click [Finish]
