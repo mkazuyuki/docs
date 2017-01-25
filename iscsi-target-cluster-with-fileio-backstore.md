@@ -25,14 +25,14 @@ This text descrives how to create iSCSI Target cluster (with fileio backstore) o
 
 ## Parameters
 
-| Cluster Resources	   | Value			|
-|--------------------------|----------------------------|
-| FIP			   | 192.168.137.130		|
-| Cluster Partition	   | /dev/sdb1			|
-| Data Partition	   | /dev/sdb2			|
-| WWN of iSCSI Target	   | iqn.2016-10.test.target:t1 |
-| WWN of iSCSI Initiator 1 | iqn.2016-10.test.target:i1 |
-| WWN of iSCSI Initiator 2 | iqn.2016-10.test.target:i2 |
+| Cluster Resources	   | Value			   |
+|--------------------------|-------------------------------|
+| FIP			   | 192.168.137.130		   |
+| Cluster Partition	   | /dev/sdb1			   |
+| Data Partition	   | /dev/sdb2			   |
+| WWN of iSCSI Target	   | iqn.2016-10.test.target:t1    |
+| WWN of iSCSI Initiator 1 | iqn.2016-10.test.initiator:i1 |
+| WWN of iSCSI Initiator 2 | iqn.2016-10.test.initiator:i2 |
 
 
 ## Procedure
@@ -53,11 +53,8 @@ On both iSCSI Target Nodes,
 		# clplcnsc -i [*base-license-file*] -p BASE33
 		# clplcnsc -i [*replicator-license-file*] -p REPL33
 
-### Configuring iSCSI Target
+### Configuring iSCSI Target Cluster
 
-### Configure EC
-
-----
 On the client PC,
 
 - Open EXPRESSCLUSTER Builder ( http://[IP of a host]:29003/ )
@@ -98,64 +95,55 @@ Add the failover-group for controlling iSCSI Target service.
 		echo "Stopped   iSCSI Target"
 
 - Click [OK]
-
-<!--
 - Click [Add]
 - Select [Type] as [floatin IP resource] then click [Next]
 - Set floating IP address as [ 192.168.137.130 ] 
 - Click [OK]
--->
-
 - Click [Finish]
 - Click [File] > [Apply Configuration]
 - Reboot node-t1, node-t2 and wait for the completion of starting of *failover-iscsi*
 
-On node-t1, prepare block device for iSCSI Target and create iSCSI Target
+On node-t1, prepare fileio backstore for iSCSI Target and create iSCSI Target
 
 - Start (iSCSI) target configuration tool
 
 		# targetcli
 
-- Create [ec-dp] as backstore
+- Unset automatic save of the configuration for safe.
 
-================================
-<!-- To be revised from here -->
-================================
+		> set global auto_save_on_exit=false
 
-		/> backstores/fileio create ec-dp /dev/NMP1
+- Create fileio backstore (*idisk*) on mountpoint of the mirror disk
 
+		> cd /backstores/fileio
+		> create idisk /mnt/idisk.img 2048M
 
-- Create WWN
+- Creating IQN
 
-		/> iscsi/ create iqn.2016-10.test.target:t1
+		> cd /iscsi
+		> create iqn.2016-10.test.target:t1
 
-- Create LUN with ec-dp
+- Assigning LUN to IQN
 
-		/> iscsi/iqn.2016-10.test.target:t1/tpg1/luns create /backstores/block/ec-dp
+		> cd /iscsi/iqn.2016-10.test.target:t1/tpg1/luns
+		> create /backstores/fileio/idisk
 
-- Create ACL
+- Allow machine (IQN of iSCSI Initiator) to scan the iSCSI target.
 
-	- for node-i1
+		> cd /iscsi/iqn.2016-10.test.target:t1/tpg1/acls
+		> create iqn.2016-10.test.initiator:i1
+		> create iqn.2016-10.test.initiator:i2
 
-		/> iscsi/iqn.2016-10.test.target:t1/tpg1/acls create iqn.2016-10.test.initiator:i1
+- Save config and exit.
 
-	- for node-i2
+		> saveconfig
+		> exit
 
-		/> iscsi/iqn.2016-10.test.target:t1/tpg1/acls create iqn.2016-10.test.initiator:i2
+- Copy the saved target configuration to another node.
 
-- Finish configuring iSCSI Target then configuration is saved.
+		# scp /etc/target/saveconfig.json node-t2:/etc/target/
 
-		/> exit
-
-- Copy the saved configuration to another node.
-
-		# scp /etc/target/saveconfig.json tgt-node2:/etc/target/
-
-- De-activate the mirror disk
-
-		# clpmdctrl -d md1
-
-----------
+<!--
 On node-t2,
 
 - Activate the mirror disk
@@ -165,8 +153,9 @@ On node-t2,
 - Restore iSCSI Target configuration
 
 		# targetcli restoreconfig
+-->
 
-## Appendix
+### iSCSi Initiator configuration
 
 On node-i1
 
@@ -188,7 +177,7 @@ On node-i1
 
 - Discover iSCSI Target (argument of "-p" option should be set as FIP of iSCSI Target server)
 
-		# iscsiadm -m discovery -t sendtargets -p 10.0.7.156
+		# iscsiadm -m discovery -t sendtargets -p 192.168.137.130
 
 - Login to iSCSI Target which specified as -T argument.
 
@@ -196,10 +185,11 @@ On node-i1
 
 - Format/Initialise the iSCSI device and mount
 
-		# mkfs -t ext4 <Data Partition Device Name>
-		# mount /dev/disk/by-path/ip-192.168.137.134:3260-iscsi-iqn.2016-10.test.target:t1-lun-0-part2 /mnt/
-
+		# mkfs -t ext4 <iSCSI Device Name>
+		# mount /dev/disk/by-path/ip-192.168.137.130:3260-iscsi-iqn.2016-10.test.target:t1-lun-0-part1 /mnt/
+<!--
 		# dd if=/dev/zero of=<Cluster Partition Device Name>
 
 		e.g.
 		# dd if=/dev/zero of=/dev/disk/by-path/ip-192.168.137.134:3260-iscsi-iqn.2016-10.test.target:t1-lun-0-part1
+-->
