@@ -46,10 +46,10 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
   - Put ECX rpm file and its license file by using scp command and so on.
   - Install ECX
 
-		> sudo bash
-		# rpm -ivh expresscls-3.3.3-1.x86_64.rpm
-		# clplcnsc -I [license file] -P BASE33
-		# reboot
+    		> sudo bash
+    		# rpm -ivh expresscls-3.3.3-1.x86_64.rpm
+    		# clplcnsc -I [license file] -P BASE33
+    		# reboot
 
 - Configure ECX On Cluster Manager
   - Access http://[IP_Address_of_Primary_node]:29003/ with web browser to open *Cluster Manager*
@@ -218,7 +218,7 @@ On vMA-1 console, register root password to allow access from EC scrips as below
 Lnux guest VM which **open-vm-tools** is installed cannot be monitord by the custom monitor resource (genw-VMn).
 The VM is treated as if vmware-tools is not installed and always normal.
 
-### esxcli ‚ğg‚¤‚½‚ß‚É ESXi ƒzƒXƒg‚Ì ƒTƒ€ƒvƒŠƒ“ƒg‚ğ vMA ‚É“o˜^‚·‚é•û–@
+### esxcli ã‚’ä½¿ã†ãŸã‚ã« ESXi ãƒ›ã‚¹ãƒˆã® ã‚µãƒ ãƒ—ãƒªãƒ³ãƒˆã‚’ vMA ã«ç™»éŒ²ã™ã‚‹æ–¹æ³•
 
 	$ sudo bash
 	# esxcli -s 192.168.137.52 -u root vm process list
@@ -226,30 +226,30 @@ The VM is treated as if vmware-tools is not installed and always normal.
 	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 192.168.137.52 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
 	New entry added successfully
 
-### (iSCSI) storage ‚Ì‘¶İ‚ğŠm”F‚·‚é•û–@
+### (iSCSI) storage ã®å­˜åœ¨ã‚’ç¢ºèªã™ã‚‹æ–¹æ³•
 
 https://pubs.vmware.com/vsphere-50/index.jsp#com.vmware.vcli.examples.doc_50/cli_advanced_storage.8.2.html?path=1_1_0_5_0_0#463363
 
 
 <!--
-# vMA ‚Ì OVF ‚ğ‘¼‚ÌŠÂ‹«‚ÅƒfƒvƒƒC‚µ‚Äg‚¤ê‡‚É•ÏX‚ª•K—v‚Æ‚È‚é•”•ª
+# vMA ã® OVF ã‚’ä»–ã®ç’°å¢ƒã§ãƒ‡ãƒ—ãƒ­ã‚¤ã—ã¦ä½¿ã†å ´åˆã«å¤‰æ›´ãŒå¿…è¦ã¨ãªã‚‹éƒ¨åˆ†
 
-	- •ÛŒì‘ÎÛ‚Ì VM ‚ğ‹¤—LƒfƒBƒXƒN (iSCSI Target) ‚ÉˆÚ“®‚³‚¹‚éB
-		- vSphere Client ‚©‚ç Datastore Browser ‚ğg‚Á‚Ä .vmx ‚Ì“ü‚Á‚Ä‚¢‚éƒtƒHƒ‹ƒ_‚ğ ‚Ü‚é‚²‚Æ‹¤—LƒfƒBƒXƒN‚ÖƒRƒs[‚·‚é
-		- u
+	- ä¿è­·å¯¾è±¡ã® VM ã‚’å…±æœ‰ãƒ‡ã‚£ã‚¹ã‚¯ (iSCSI Target) ã«ç§»å‹•ã•ã›ã‚‹ã€‚
+		- vSphere Client ã‹ã‚‰ Datastore Browser ã‚’ä½¿ã£ã¦ .vmx ã®å…¥ã£ã¦ã„ã‚‹ãƒ•ã‚©ãƒ«ãƒ€ã‚’ ã¾ã‚‹ã”ã¨å…±æœ‰ãƒ‡ã‚£ã‚¹ã‚¯ã¸ã‚³ãƒ”ãƒ¼ã™ã‚‹
+		- ã€Œ
 
 	- /opt/nec/clusterpro/scripts/{Group Name}/{Resource Name}/vmconf.pl
-		- •ÛŒì‘ÎÛ VM ‚Ì vmkernel “à‚Å‚ÌŠi”[ path
+		- ä¿è­·å¯¾è±¡ VM ã® vmkernel å†…ã§ã®æ ¼ç´ path
 
-			vMA ‚ÉƒƒOƒCƒ“‚µ‚ÄˆÈ‰º‚ÌƒRƒ}ƒ“ƒh‚Åo—Í‚³‚ê‚é .vmx ƒtƒ@ƒCƒ‹‚ÌƒpƒX‚ğw’è‚·‚éB
+			vMA ã«ãƒ­ã‚°ã‚¤ãƒ³ã—ã¦ä»¥ä¸‹ã®ã‚³ãƒãƒ³ãƒ‰ã§å‡ºåŠ›ã•ã‚Œã‚‹ .vmx ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ‘ã‚¹ã‚’æŒ‡å®šã™ã‚‹ã€‚
 			
 				# vmware-cmd -H {ESXi#1_IP} -U root -P {password} -l
 	 	
-	 	- ESXi 1†‹@A2†‹@‚Ì VMkernel port ‚Ì IP address
-	 	- vMA 1†‹@A2†‹@‚Ì IP address
+	 	- ESXi 1å·æ©Ÿã€2å·æ©Ÿã® VMkernel port ã® IP address
+	 	- vMA 1å·æ©Ÿã€2å·æ©Ÿã® IP address
 
 	- /usr/lib/vmware-vcli/apps/general/credstore_admin.pl
-	 ‚ğg‚Á‚Ä ESXi 1, 2†‹@‚Ì root ƒpƒXƒ[ƒh ‚ğ vMA ‚É“o˜^‚·‚éB
+	 ã‚’ä½¿ã£ã¦ ESXi 1, 2å·æ©Ÿã® root ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰ ã‚’ vMA ã«ç™»éŒ²ã™ã‚‹ã€‚
 	
 	 	/usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s {ESXi#1_IP} -u root -p {password}
 
@@ -272,13 +272,13 @@ https://pubs.vmware.com/vsphere-50/index.jsp#com.vmware.vcli.examples.doc_50/cli
 
 ## Notes
 
-ŠÇ—‘ÎÛVM ‚ª vSphere Clinet ãA¶ƒyƒCƒ“‚ÌƒcƒŠ[‚ÉA
+ç®¡ç†å¯¾è±¡VM ãŒ vSphere Clinet ä¸Šã€å·¦ãƒšã‚¤ãƒ³ã®ãƒ„ãƒªãƒ¼ã«ã€
 
 	/vmfs/volumes/[LUNID]/[vm name]/[vm name].vmx (inaccessible)
 
-‚Æ ”–‚¢ƒOƒŒ[ ‚Å•\¦‚³‚ê‚Ä‚¢‚éê‡‚ÍA‚»‚ê‚ç‚ğ **è“®‚Å** íœ‚·‚é
+ã¨ è–„ã„ã‚°ãƒ¬ãƒ¼ ã§è¡¨ç¤ºã•ã‚Œã¦ã„ã‚‹å ´åˆã¯ã€ãã‚Œã‚‰ã‚’ **æ‰‹å‹•ã§** å‰Šé™¤ã™ã‚‹
 
-	‘ÎÛVM‚ğ‰EƒNƒŠƒbƒN > [Remove from Inventory]
+	å¯¾è±¡VMã‚’å³ã‚¯ãƒªãƒƒã‚¯ > [Remove from Inventory]
 
 
 -->
