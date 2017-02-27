@@ -177,7 +177,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
 - on vma01
   - reflect vmconf.pl from vma01 to vma02
 
-		# clpcfctrl --push
+    		# clpcfctrl --push
 
 ## Tips
 
@@ -216,20 +216,12 @@ On vMA-1 console, register root password to allow access from EC scrips as below
 Lnux guest VM which **open-vm-tools** is installed cannot be monitord by the custom monitor resource (genw-VMn).
 The VM is treated as if vmware-tools is not installed and always normal.
 
-### esxcli を使うために ESXi ホストの サムプリントを vMA に登録する方法
-
-	$ sudo bash
-	# esxcli -s 192.168.137.52 -u root vm process list
-	Connect to 192.168.137.52 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
-	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 192.168.137.52 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
-	New entry added successfully
-
+<!--
 ### (iSCSI) storage の存在を確認する方法
 
 https://pubs.vmware.com/vsphere-50/index.jsp#com.vmware.vcli.examples.doc_50/cli_advanced_storage.8.2.html?path=1_1_0_5_0_0#463363
 
 
-<!--
 # vMA の OVF を他の環境でデプロイして使う場合に変更が必要となる部分
 
 	- 保護対象の VM を共有ディスク (iSCSI Target) に移動させる。
