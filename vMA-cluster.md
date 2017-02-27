@@ -92,9 +92,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     		> sudo /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s {IP_of_esxi01} -u root -p {password}
     		> sudo /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s {IP_of_esxi02} -u root -p {password}
 
-    - setup ESXi thumbprint on both vMA to use esxcli command
-
-      - On vma01
+  - on vma01, setup ESXi thumbprint to use esxcli command
 
     		$ sudo bash
     		# esxcli -s 10.0.0.1 -u root vm process list
@@ -102,7 +100,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     		# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
     		New entry added successfully
 
-      - On vma02
+  - on vma02, setup ESXi thumbprint to use esxcli command
 
     		$ sudo bash
     		# esxcli -s 10.0.0.2 -u root vm process list
@@ -136,20 +134,20 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
 - on vma01
   - edit */opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory/vmconf.pl*
 
-		> sudo bash
-		# mkdir /opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory
- 		# vi    /opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory/vmconf.pl
-		# cat   /opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory/vmconf.pl
-		#--------
-		# The path to datastore which VM configuration file stored.
-		#       This value is used to delete VMs from inventory of standby node
-		our $DatastorePath = "/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f";
-
-		# IP addresses for VM kernel port.
-		our $vmk1 = "10.0.0.1";
-		our $vmk2 = "10.0.0.2";
-		1;
-		#--------
+    		> sudo bash
+    		# mkdir /opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory
+     		# vi    /opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory/vmconf.pl
+    		# cat   /opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory/vmconf.pl
+    		#--------
+    		# The path to datastore which VM configuration file stored.
+    		#       This value is used to delete VMs from inventory of standby node
+    		our $DatastorePath = "/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f";
+    
+    		# IP addresses for VM kernel port.
+    		our $vmk1 = "10.0.0.1";
+    		our $vmk2 = "10.0.0.2";
+    		1;
+    		#--------
 
 - on Cluster Manager
   - change to [Operation Mode] from [Config Mode]
