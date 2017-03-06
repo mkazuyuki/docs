@@ -130,6 +130,32 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     - [Service] menu > [Start Cluster]
 
 ### Configuring Monitor resource
+- On both vSphere Client for esxi01 and esxi02
+  - click ESXi host icon in left pane.
+  - Select [Configuration] tab > [Security Profile] > [Properties] of Services
+  - Make "ssh" running.
+  
+- On vma01
+  - copy public key of root user to esxi02
+
+    	> sudo bash
+    	# scp ~/.ssh/id_rsa.pub 10.0.0.2:/etc/ssh/keys-root/
+
+  - remote login to esxi02 as root user and configure ssh for remote login.
+
+    	# ssh 10.0.0.2
+	Password:
+
+    	# cd /etc/ssh/keys-root
+    	# cat id_rsa.pub >> authorized_keys
+    	# exit
+
+    	# exit
+    	> exit
+
+- On vma02 (do the same for esxi01 (10.0.0.1))
+  - copy public key of root user to esxi01
+  - remote login to esxi01 as root user and configure ssh for remote login.
 
 - on vma01
   - edit */opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory/vmconf.pl*
