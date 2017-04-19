@@ -1,0 +1,8 @@
+- vMA VM, iSCSI VM の自動起動設定
+- iSCSI network と mirror network の分割
+- iSCSI用 VMkernel port の追加
+- TSO, LRO, Jumbo frame の無効化
+- ssh サービスの自動起動設定
+- vMA Cluster の genw-remote-node は
+  - 対向 vMA VM の power off status を認識すると power on を実行する。従って、意図的に vMA VM を power off 状態にするときは、vMA Cluster の genw-remote-node を suspend する必要がある。
+  - 対向 vMA VM で ECサービス の offline status を認識すると service start を実行する。従って、意図的に ECサービス を offline status にするときは、vMA Cluster の genw-remote-node を suspend する必要がある。

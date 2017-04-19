@@ -1,4 +1,4 @@
-# Howto setup iSCSI Target Cluster on EXPRESSCLUSTER for Linux wtih fileio backstore 
+# Howto setup iSCSI Target Cluster on EXPRESSCLUSTER for Linux with fileio backstore 
 
 ----
 
@@ -14,26 +14,50 @@ This text descrives how to create iSCSI Target cluster (with fileio backstore) o
 - RHEL7.2 x86_64
 - ECX3.3.3-1
 
-## Nodes configuration
+## Nodes configuration example
 
-| Role of the node		 | Host name | IP address      |
-|--------------------------------|-----------|-----------------|
-| Primary iSCSI Target Node	 | node-t1   | 192.168.137.131 |
-| Secondary iSCSI Target Node	 | node-t2   | 192.168.137.132 |
-| Primarry iSCSI Initiator Node  | node-i1   ||
-| Secondary iSCSI Initiator Node | node-i2   ||
+iSCSI Target nodes
 
-## Parameters
+|			| Primary		| Secondary		|
+|---			|---			|---			|
+| Hostname		| node-t1		| node-t2		|
+| IP Address for mirror	| 10.0.0.11/24		| 10.0.0.12/24		| 
+| IP Address for iSCSI	| 192.168.0.11/24	| 192.168.0.12/24	| 192.168.0.10
+| root password		| passwd1		| passwd2		|
+
+<!-- ƒ~ƒ‰[NW‚ð ESXi ‚ÌManagement NW ‚ÆˆÙ‚È‚éNW‚É‚·‚é‚×‚« -->
+
+
+ESXi hosts
+
+|			| Primary	| Secondary	|
+|---			|---		|---		|
+| Hostname		| esxi01	| esxi02	|
+| VMkernel for iSCSI	| 192.168.0.1	| 192.168.0.2	|
+| Management		| 10.0.0.1	| 10.0.0.2	|
+| root password		| passwd1	| passwd2	|
+
+
+
+| Role of the node		 | Host name | IP address                     |
+|--------------------------------|-----------|--------------------------------|
+| Primary iSCSI Target Node	 | node-t1   | 192.168.0.11/24 , 10.0.0.11/24 |
+| Secondary iSCSI Target Node	 | node-t2   | 192.168.0.12/24 , 10.0.0.12/24 |
+| Primarry ESXi			 | esxi1     | 192.168.0.1/24  , 10.0.0.1/24  |
+| Secondary ESXi                 | esxi2     | 192.168.0.2/24  , 10.0.0.2/24  |
+| Primarry iSCSI Initiator Node  | node-i1   | 192.168.0.21/24 |
+| Secondary iSCSI Initiator Node | node-i2   | 192.168.0.22/24 |
+
+## Parameters example
 
 | Cluster Resources	   | Value			   |
 |--------------------------|-------------------------------|
-| FIP			   | 192.168.137.130		   |
+| FIP			   | 192.168.0.10		   |
 | Cluster Partition	   | /dev/sdb1			   |
 | Data Partition	   | /dev/sdb2			   |
 | WWN of iSCSI Target	   | iqn.2016-10.test.target:t1    |
 | WWN of iSCSI Initiator 1 | iqn.2016-10.test.initiator:i1 |
 | WWN of iSCSI Initiator 2 | iqn.2016-10.test.initiator:i2 |
-
 
 ## Procedure
 
@@ -43,7 +67,7 @@ On both iSCSI Target Nodes,
 
 - Install RHEL7 and configure
 	- hostname (e.g. node-t1, node-t2)
-	- IP address (e.g. 192.168.137.131 for node-t1, 192.168.137.132 for node-t2)
+	- IP address (e.g. 192.168.0.11 for node-t1, 192.168.0.12 for node-t2)
 	- block device for MD resoruce (e.g. /dev/sdb1 and /dev/sdb2).
 
 - Install packages and EC licenses
@@ -57,30 +81,36 @@ On both iSCSI Target Nodes,
 
 On the client PC,
 
-- Open EXPRESSCLUSTER Builder ( http://[IP of a host]:29003/ )
-- Configure the cluster which have no failover-group.
+- Open EXPRESSCLUSTER Builder ( http://192.168.0.11:29003/ )
+- Configure the cluster *iSCSI-Cluster* which have no failover-group.
+    - Confgure two Heartbeat I/F 
 
-Add the failover-group for controlling iSCSI Target service.
 
-- [Cluster Properties] > [Interconnect] tab > set one of [MDC] as [mdc1]
-- Right click [Groups] in left pane then click [Add Group]
-- Set [Name] as [*failover-iscsi*] then click [Next]
-- Click [Next]
-- Click [Next]
-- Click [Add]
+#### Add the failover-group for controlling iSCSI Target service.
+- Right click [Groups] in left pane > [Add Group]
+- Set [Name] as [*failover-iscsi*]  > [Next]
+- [Next]
+- [Next]
+- [Finish]
+
+#### Add the MD resource
+- Right click [iSCSI-Cluster] in left pane > [Properties]
+- [Interconnect] tab > set [mdc1] for [MDC] and 10.0.0.0/24 network > [OK]
+- Right click [failover-iscsi] in left pane > [Add Resource]
 - Select [Type] as [mirror disk resource], set [Name] as [md1] then click [Next]
-- Click [Next]
-- Click [Next]
+- [Next]
+- [Next]
 - Set
 	- [Mount Point] as [/mnt]
 	- [Data Partition Device Name] as [ /dev/sdb2 ]
 	- [Clsuter Partition Device Name] as [ /dev/sdb1 ]
+- [Finish]
 
-- Click [OK]
-- Click [Add]
+#### Add the execute resource for controlling target service
+- Right click [failover-iscsi] in left pane > [Add Resource]
 - Select [Type] as [execute resource] then click [Next]
-- Click [Next]
-- Click [Next]
+- [Next]
+- [Next]
 - Select start.sh then click [Edit]. Add below lines.
 
 		echo "Starting iSCSI Target"
@@ -93,16 +123,34 @@ Add the failover-group for controlling iSCSI Target service.
 		systemctl stop target
 		echo "Stopped   iSCSI Target"
 
-- Click [OK]
-- Click [Add]
-- Select [Type] as [floating IP resource] then click [Next]
-- Set floating IP address as [ 192.168.137.130 ] 
-- Click [OK]
-- Click [Finish]
-- Click [File] > [Apply Configuration]
-- Reboot node-t1, node-t2 and wait for the completion of starting of *failover-iscsi*
+- [Finish]
 
-On node-t1, prepare fileio backstore for iSCSI Target and create iSCSI Target
+#### Add floating IP resource for iSCSI Target
+- Right click [failover-iscsi] in left pane > [Add Resource]
+- Select [Type] as [floating IP resource] then click [Next]
+- [Next]
+- [Next]
+- Set floating IP address as [ 192.168.0.10 ] 
+- Click [Finish]
+
+#### Add the execute resource for automatic MD recovery
+This resource is used for the **special case**
+
+- Right click [failover-iscsi] in left pane > [Add Resource]
+- Select [Type] as [execute resource], set [Name] as [*exec-md-recovery*] then click [Next]
+- Uncheck [Follow the default dependency] > [Next]
+- [Next]
+- Select start.sh then click [Replace]
+- Select [*exec-md-recovery.pl*]
+- [Finish]
+
+#### Apply the configuration
+- Click [File] > [Apply Configuration]
+- Reboot node-t1, node-t2 and wait for the completion of starting of the cluster *failover-iscsi*
+
+### Configuring iSCSI Target
+On node-t1, create fileio backstore and configure it as backstore for the iSCSI Target.
+- Login to the console of node-t1.
 
 - Start (iSCSI) target configuration tool
 
@@ -112,7 +160,7 @@ On node-t1, prepare fileio backstore for iSCSI Target and create iSCSI Target
 
 		> set global auto_save_on_exit=false
 
-- Create fileio backstore (*idisk*) on mountpoint of the mirror disk
+- Create fileio backstore (*idisk*) which have required size on mountpoint of the mirror disk
 
 		> cd /backstores/fileio
 		> create idisk /mnt/idisk.img 2048M
@@ -138,7 +186,7 @@ On node-t1, prepare fileio backstore for iSCSI Target and create iSCSI Target
 		> saveconfig
 		> exit
 
-- Copy the saved target configuration to another node.
+- Copy the saved target configuration to the other node.
 
 		# scp /etc/target/saveconfig.json node-t2:/etc/target/
 
@@ -154,7 +202,21 @@ On node-t2,
 		# targetcli restoreconfig
 -->
 
-### iSCSi Initiator configuration
+### SCSI Initiator configuration for ESXi
+- Open [vSphere Client] and connect to esxi1
+- Click ESXi host icon at the top of left pane.
+- Select [Configuration] tab in right pane.
+- Select [Storage Adapter] > [Add]
+- Configure [iSCSI Software Adapter]
+  - set WWN [iqn.2016-10.test.initiator:i1] for the adapter
+  - set IP address *192.168.0.10* for the iSCSI Target
+- Select [Storage] > [Add Storage]
+- Create [iSCSI] as datastore in the iSCSI Target
+
+Do the same for esxi2.
+
+
+### [Reference] Linux iSCSI Initiator configuration for general system
 
 On node-i1
 
@@ -174,18 +236,18 @@ On node-i1
 
 		# iscsiadm -m node -u
 
-- Discover iSCSI Target (argument of "-p" option should be set as FIP of iSCSI Target server)
+- Discover iSCSI Target ("-p" option should be set as FIP of iSCSI Target server)
 
-		# iscsiadm -m discovery -t sendtargets -p 192.168.137.130
+		# iscsiadm -m discovery -t sendtargets -p 192.168.0.10
 
 - Login to iSCSI Target which specified as -T argument.
 
-		# iscsiadm -m node -T iqn.2016-10.test.target:t1 -p 10.0.7.156 -l
+		# iscsiadm -m node -T iqn.2016-10.test.target:t1 -p 192.168.0.10 -l
 
 - Format/Initialise the iSCSI device and mount
 
 		# mkfs -t ext4 <iSCSI Device Name>
-		# mount /dev/disk/by-path/ip-192.168.137.130:3260-iscsi-iqn.2016-10.test.target:t1-lun-0-part1 /mnt/
+		# mount /dev/disk/by-path/ip-192.168.0.10:3260-iscsi-iqn.2016-10.test.target:t1-lun-0-part1 /mnt/
 <!--
 		# dd if=/dev/zero of=<Cluster Partition Device Name>
 

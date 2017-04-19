@@ -23,13 +23,13 @@ This text descrives how to create iSCSI Target cluster (with block device back s
 | Primarry iSCSI Initiator Node  | node-i1 |
 | Secondary iSCSI Initiator Node | node-i2 |
 
-| Resource		   | Value			|
-|--------------------------|----------------------------|
-| FIP			   | 192.168.137.134		|
-| Disk device for Target   | /dev/sdb			|
-| WWN of iSCSI Target	   | iqn.2016-10.test.target:t1 |
-| WWN of iSCSI Initiator 1 | iqn.2016-10.test.target:i1 |
-| WWN of iSCSI Initiator 2 | iqn.2016-10.test.target:i2 |
+| Resource		   | Value				|
+|--------------------------|------------------------------------|
+| FIP			   | 192.168.137.134			|
+| Disk device for Target   | /dev/sdb				|
+| WWN of iSCSI Target	   | iqn.2016-10.test.target:t1		|
+| WWN of iSCSI Initiator 1 | iqn.2016-10.test.initiator:i1	|
+| WWN of iSCSI Initiator 2 | iqn.2016-10.test.initiator:i2	|
 
 
 
