@@ -1,7 +1,11 @@
 #!/usr/bin/perl -w
 #
 # Script for monitoring the Virtual Machine on standby ESXi
-#
+# - This tries to recover the iSCSI session of the ESXi which the vMA (specified as $vma1, $vma2) is running on.
+#   It is a countermeasure for that iSCSI Software Adapter on the ESXi cannot recover the iSCSI session after a boot of the ESXi.
+# - This tires to clan up invalid VMs and the VMs on the specified Datastore which are registerd on the inventory of standby ESXi.
+#   It is a countermeasure for that VM(s) which is in "invalid" or "power off" status left on the standby ESXi inventory after reboot of the ESXi.
+
 use strict;
 use FindBin;
 #-------------------------------------------------------------------------------

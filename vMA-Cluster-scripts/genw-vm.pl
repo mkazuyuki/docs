@@ -7,15 +7,25 @@ use FindBin;
 #-------------------------------------------------------------------------------
 # Configuration
 #-------------------------------------------------------------------------------
+# The path to VM configuration file. This must be absolute UUID-based path.
+# like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
+our @cfg_paths = (
+"/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/cent7/cent7.vmx"
+);
+
+# IP addresses of VMkernel port.
+our $vmk1 = "10.0.0.1";
+our $vmk2 = "10.0.0.2";
+
+# IP addresses of vMA VMs
+our $vma1 = "10.0.0.21";
+our $vma2 = "10.0.0.22";
+
+#-------------------------------------------------------------------------------
 # The interval to check the vm status. (second)
 my $interval = 1;
 #-------------------------------------------------------------------------------
-our $cfg_path = "";
-our @cfg_paths = "";
-our $vmk1 = "";
-our $vmk2 = "";
-our $vma1 = "";
-our $vma2 = "";
+#our $cfg_path = "";
 require($FindBin::Bin . "/vmconf.pl");
 
 # VM operation command path

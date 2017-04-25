@@ -20,11 +20,11 @@ if ($ENV{"CLP_EVENT"} ne "START") {
 }
 
 &Log("CLP_SERVER = [" . $ENV{"CLP_SERVER"} . "]\n");
-if ($ENV{"CLP_SERVER"} ne "HOME") {
-	exit $ret;
-}
+#if ($ENV{"CLP_SERVER"} ne "HOME") {
+#	exit $ret;
+#}
 
-# Here HOME and START
+# Here CLP_EVENT is START
 &execution("clpmdstat -l");
 foreach (@lines) {
 	if (/<(.*)>/) {

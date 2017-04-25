@@ -12,7 +12,7 @@
 
 ####
 # IP address of VMkernel port on the host ESXi.
-vmk=10.0.12.76
+vmk=10.0.0.1
 
 ####
 # Datastore name for iSCSI shared disk which the host ESXi access.

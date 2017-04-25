@@ -8,23 +8,43 @@ use FindBin;
 # Configuration
 #-------------------------------------------------------------------------------
 # The path to VM configuration file. This must be absolute UUID-based path.
-#require "vmconf.pl";
-#my $cfg_path = "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
+# like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
+our @cfg_paths = (
+#"/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/vm1/vm1.vmx",
+"/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/cent7/cent7.vmx"
+);
+
+# The Datastore name which the VM is stored.
+our $datastore = "iSCSI";
+
+# IP addresses of VMkernel port.
+our $vmk1 = "10.0.0.1";
+our $vmk2 = "10.0.0.2";
+
+# IP addresses of vMA VMs
+our $vma1 = "10.0.0.21";
+our $vma2 = "10.0.0.22";
+#-------------------------------------------------------------------------------
+# If using vmconf.pl as configuration file, comment out the above configuration
+# and comment in the below configuraiton.
+##our @cfg_paths = ();
+##our $datastore = "";
+##our $vmk1 = "";
+##our $vmk2 = "";
+##our $vma1 = "";
+##our $vma2 = "";
+##require($FindBin::Bin . "/vmconf.pl");
+#-------------------------------------------------------------------------------
 # The interval to check the vm status. (second)
 my $interval = 5;
 # The miximum count to check the vm status.
 my $max_cnt = 100;
 #-------------------------------------------------------------------------------
-our $cfg_path = "";
-our $vmk1 = "";
-our $vmk2 = "";
-our $vma1 = "";
-our $vma2 = "";
-require($FindBin::Bin . "/vmconf.pl");
-my $vmname = $cfg_path; # VMname to be outputted on log.
-$vmname =~ s/^(.*\/)(.*)(\.vmx)/$2/;
-# VM operation command path
+# Global values
+my $cfg_path = "";
+my $vmname = "";
 my $vmk = "";
+
 my $tmp = `ip address | grep $vma1`;
 if ($? == 0) {
 	$vmk = $vmk1;
@@ -39,7 +59,7 @@ if ($? == 0) {
 }
 my $vmcmd = "/usr/bin/vmware-cmd --server $vmk --username root";
 $ENV{"HOME"} = "/root";
-&Log("[D] [/usr/bin/vmware-cmd --server $vmk --username root]\n");
+&Log("[D] [$vmcmd]\n");
 
 # VM execution state map
 my %state = (
@@ -52,20 +72,30 @@ my %state = (
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
-if (&IsPoweredOn()){
-	if (&PowerOff()){
-		if (!&WaitPoweredOffDone()){
-			exit 1;
+my $r = 0;
+foreach (@cfg_paths){
+	# VMname to be output on log.
+	$vmname = $_;
+	$vmname =~ s/^(.*\/)(.*)(\.vmx)/$2/;
+	$cfg_path = $_;
+	&Log("[I] [$vmname][$cfg_path]\n");
+	if (&IsPoweredOn()){
+		if (&PowerOff()){
+			if (!&WaitPoweredOffDone()){
+				$r = 1;
+			}
+		}else{
+			$r = 1;
 		}
+	}
+	if (&UnRegisterVm()){
+		next;
+		#exit 0;
 	}else{
-		exit 1;
+		$r = 1;
 	}
 }
-if (&UnRegisterVm()){
-	exit 0;
-}else{
-	exit 1;
-}
+exit $r;
 #-------------------------------------------------------------------------------
 # Functions
 #-------------------------------------------------------------------------------
@@ -83,7 +113,7 @@ sub IsEqualState{
 	my $ret = 0;
 	my $opn_ret;
 	my $line;
-	&Log("[D] [$vmcmd $cfg_path $vmop\n");
+	&Log("[D] [$vmcmd $cfg_path $vmop]\n");
 	$opn_ret = open(my $fh, $vmcmd . " \"" . $cfg_path . "\" " . $vmop . " 2>&1 |");
 	if (!$opn_ret){
 		&Log("[E] [$vmname] at [$vmk]: $vmcmd $vmop could not be executed.\n");
@@ -121,7 +151,7 @@ sub PowerOffOpMode{
 	my $opn_ret;
 	my $line;
 	return 0 if ($powerop_mode !~ /^hard|soft$/);
-	&Log("[D] " . $vmcmd . " \"" . $cfg_path . "\" " . $vmop . " " . $powerop_mode . "\n");
+	&Log("[D] [" . $vmcmd . " \"" . $cfg_path . "\" " . $vmop . " " . $powerop_mode . "]\n");
 	$opn_ret = open(my $fh, $vmcmd . " \"" . $cfg_path . "\" " . $vmop . " " . $powerop_mode . " 2>&1 |");
 	if (!$opn_ret){
 		&Log("[E] [$vmname] at [$vmk]: $vmcmd $vmop $powerop_mode could not be executed.\n");

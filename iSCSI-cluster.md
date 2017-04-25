@@ -18,14 +18,12 @@ This text descrives how to create iSCSI Target cluster (with fileio backstore) o
 
 iSCSI Target nodes
 
-|			| Primary		| Secondary		|
-|---			|---			|---			|
+|			| Primary		| Secondary		| FIP
+|---			|---			|---			|---
 | Hostname		| node-t1		| node-t2		|
-| IP Address for mirror	| 10.0.0.11/24		| 10.0.0.12/24		| 
 | IP Address for iSCSI	| 192.168.0.11/24	| 192.168.0.12/24	| 192.168.0.10
+| IP Address for mirror	| 192.168.1.11/24	| 192.168.1.12/24	| 
 | root password		| passwd1		| passwd2		|
-
-<!-- ƒ~ƒ‰[NW‚ð ESXi ‚ÌManagement NW ‚ÆˆÙ‚È‚éNW‚É‚·‚é‚×‚« -->
 
 
 ESXi hosts
@@ -34,19 +32,19 @@ ESXi hosts
 |---			|---		|---		|
 | Hostname		| esxi01	| esxi02	|
 | VMkernel for iSCSI	| 192.168.0.1	| 192.168.0.2	|
+| iSCSI Initiator WWN	| 
 | Management		| 10.0.0.1	| 10.0.0.2	|
 | root password		| passwd1	| passwd2	|
 
 
-
-| Role of the node		 | Host name | IP address                     |
-|--------------------------------|-----------|--------------------------------|
-| Primary iSCSI Target Node	 | node-t1   | 192.168.0.11/24 , 10.0.0.11/24 |
-| Secondary iSCSI Target Node	 | node-t2   | 192.168.0.12/24 , 10.0.0.12/24 |
-| Primarry ESXi			 | esxi1     | 192.168.0.1/24  , 10.0.0.1/24  |
-| Secondary ESXi                 | esxi2     | 192.168.0.2/24  , 10.0.0.2/24  |
-| Primarry iSCSI Initiator Node  | node-i1   | 192.168.0.21/24 |
-| Secondary iSCSI Initiator Node | node-i2   | 192.168.0.22/24 |
+| Role of the node		 | Host name | IP address			|
+|--------------------------------|-----------|----------------------------------|
+| Primary iSCSI Target Node	 | node-t1   | 192.168.0.11/24, 192.168.1.11/24	|
+| Secondary iSCSI Target Node	 | node-t2   | 192.168.0.12/24, 192.168.1.12/24	|
+| Primarry ESXi			 | esxi1     | 192.168.0.1/24 , 10.0.0.1/24	|
+| Secondary ESXi                 | esxi2     | 192.168.0.2/24 , 10.0.0.2/24	|
+| Primarry iSCSI Initiator Node  | node-i1   | 192.168.0.21/24			|
+| Secondary iSCSI Initiator Node | node-i2   | 192.168.0.22/24			|
 
 ## Parameters example
 
@@ -143,6 +141,59 @@ This resource is used for the **special case**
 - Select start.sh then click [Replace]
 - Select [*exec-md-recovery.pl*]
 - [Finish]
+
+
+#### Add the custom monitor resource for automatic MD recovery
+- on Cluster Manager
+  - change to [Operation Mode] from [Config Mode]
+  - right click [Monitors] > [Add Monitor Resource]
+  - [Info] section
+    - select [custom monitor] as [type] > input *genw-md* > [Next]
+  - [Monitor (common)] section
+    - input *60* as [Wait Time ot Start Monitoring]
+    - select [Active] as [Monitor Timing]
+    - [Browse] button
+      - select [md1] > [OK]
+    - [Next]
+  - [Monitor (special)] section
+    - [Replace]
+      - select *genw-md.pl* > [Open] > [Yes]
+    - input */opt/nec/clusterpro/log/genw-md.log* as [Log Output Paht] > check [Rotate Log]
+    - [Next]
+  - [Recovery Action] section
+    - select [Execute only the final action] as [Recovery Action]
+    - [Browse]
+      - [LocalServer] > [OK]
+    - select [No operation] as [Final Action]
+    - [Finish]
+
+#### Adding Monitor which make remote vMA VM and ECX keep online.
+- on Cluster Manager
+  - change to [Operation Mode] from [Config Mode]
+  - right click [Monitors] > [Add Monitor Resource]
+  - [Info] section
+    - select [custom monitor] as [type] > input *genw-remote-node* > [Next]
+  - [Monitor (common)] section
+    - select [Always] as [Monitor Timing]
+    - [Next]
+  - [Monitor (special)] section
+    - [Replace]
+      - select *genw-remote-node.pl* > [Open] > [Yes]
+    - [Edit]
+      - write $VMNAME1 as VM name of node-t1 in the esx01 inventory
+      - write $VMNAME2 as VM name of node-t2 in the esx02 inventory
+      - write $VMIP1 as IP address for node-t1
+      - write $VMIP2 as IP address for node-t2
+      - write $VMK1 as IP address for esxi01
+      - write $VMK2 as IP address for esxi02
+    - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Paht] > check [Rotate Log]
+    - [Next]
+  - [Recovery Action] section
+    - select [Execute only the final action] as [Recovery Action]
+    - [Browse]
+      - [LocalServer] > [OK]
+    - select [No operation] as [Final Action]
+    - [Finish]
 
 #### Apply the configuration
 - Click [File] > [Apply Configuration]
