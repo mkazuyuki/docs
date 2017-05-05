@@ -91,7 +91,7 @@ sub IsRemoteClpOffline {
 	my $nodelocal	= "";
 	my $statremote	= "";
 
-	execution("clpstat");
+	&execution("clpstat");
 	foreach(@lines){
 		chomp;
 		if (/^\s{4}(\S+?)\s.*: (.+?)\s/) {
