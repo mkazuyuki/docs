@@ -9,6 +9,10 @@
 # - clean up such a invalid VMs from the ESXi inventory.
 # - mount iSCSI datastore on the ESXi
 #
+# Put this file as /etc/init.d/after.local
+# Then issute
+# chmod 755 /etc/init.d/after.local
+#
 
 ####
 # IP address of VMkernel port on the host ESXi.
