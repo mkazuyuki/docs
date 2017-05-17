@@ -26,7 +26,7 @@ our $vma2 = "10.0.0.22";
 my $interval = 1;
 #-------------------------------------------------------------------------------
 #our $cfg_path = "";
-require($FindBin::Bin . "/vmconf.pl");
+#require($FindBin::Bin . "/vmconf.pl");
 
 # VM operation command path
 my $vmk = "";
@@ -77,7 +77,7 @@ sub Monitor{
 	my $ret = -1;
 	my $opn_ret;
 	my $line;
-	$cfg_path = shift;
+	my $cfg_path = shift;
 	#&Log("[D] executing [$vmcmd \"$cfg_path\" $vmop]\n");
 	$opn_ret = open(my $fh, "$vmcmd \"$cfg_path\" $vmop 2>&1 |");
 	if (!$opn_ret){
