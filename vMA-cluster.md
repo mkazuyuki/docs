@@ -169,7 +169,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
 - On both vSphere Client for esxi01 and esxi02
   - click ESXi host icon in left pane.
   - Select [Configuration] tab > [Security Profile] > [Properties] of Services
-  - Make "ssh" running.
+  - Check [Start and stop with host] > push [Start] button and make "ssh" running.
   
 - On vma01 console
   - copy public key of root user to esxi02
