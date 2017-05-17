@@ -1,4 +1,3 @@
---
 #!/usr/bin/perl -w
 
 #
@@ -38,6 +37,11 @@ while(1){
 	my $flag = 0;
 	&execution("clpmdstat -m $name_md");
 	foreach (@lines) {
+		if (/Mirror Status: No Construction/) {
+			&Log("[W] Skip, since mirror is not constructed\n");
+			$flag = 1;
+			last;
+		}
 		if (/Mirror Color\s+?RED\s+(RED|GRAY)/) {
 			&execution("yes | clpmdctrl -f $name_md");
 			last;
