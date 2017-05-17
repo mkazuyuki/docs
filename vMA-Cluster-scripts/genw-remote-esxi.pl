@@ -7,19 +7,25 @@
 #   It is a countermeasure for that VM(s) which is in "invalid" or "power off" status left on the standby ESXi inventory after reboot on crash of the ESXi.
 
 use strict;
-use FindBin;
+#use FindBin;
 #-------------------------------------------------------------------------------
 # Configuration
 #-------------------------------------------------------------------------------
-our $DatastoreName = "";
-our $vmk1 = "";
-our $vmk2 = "";
-our $vma1 = "";
-our $vma2 = "";
-our $vmhba1 = "";
-our $vmhba2 = "";
+our $DatastoreName = "iSCSI";
 
-require($FindBin::Bin . "/vmconf.pl");
+# IP address for VMkernel port
+our $vmk1 = "10.0.0.1";
+our $vmk2 = "10.0.0.2";
+
+# IP address for vMA VMs
+our $vma1 = "10.0.0.21";
+our $vma2 = "10.0.0.22";
+
+# Device name of iSCSI Software Adapter on ESXi-1 and ESXi-2 
+our $vmhba1 = "vmhba35";
+our $vmhba2 = "vmhba35";
+#-------------------------------------------------------------------------------
+#require($FindBin::Bin . "/vmconf.pl");
 
 # This line need for correct execution of vmware-cmd w/o password
 $ENV{"HOME"} = "/root";
