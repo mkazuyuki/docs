@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w
 
 #
+# UNDER DEVELOPING
+# The intention of this script is integration of genw-remote-esxi.pl and genw-remote-node.pl
+#----
 # This monitors online status of CLP, VM (vMA) on remote node.
 # - If CLP is offline and VM   is online, then starting CLP.
 # - If VM  is offline and ESXi is online, then starting VM.
