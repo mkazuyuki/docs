@@ -9,9 +9,6 @@
 |	|RED	| Will be automatically recoverd by "mdw"
 |	|GRAY	| No way to deal with
 
-- クラスタ起動時
-
-- グループ起動時
-
-
-	
+- The start timing
+	- Starting the cluster
+	- Starting the failover group	
