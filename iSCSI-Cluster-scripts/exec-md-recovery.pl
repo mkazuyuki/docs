@@ -44,17 +44,18 @@ while(1){
 		}
 		if (/Mirror Color\s+?RED\s+(RED|GRAY)/) {
 			&execution("yes | clpmdctrl -f $name_md");
+			&execution("clplogcmd -m \"[exec-md-recovery] changed [$name_md] from RED-[$1] to GREEN-[$1] $1\"");
 			last;
 		}
 		elsif (/Mirror Color\s+?RED\s+GREEN/) {
-			&execution("clpmdctrl -r $name_md");
+			# Giving up recovery then failover
+			&execution("clplogcmd -m \"[exec-md-recovery] MD status is RED - GREEN\"");
+			$flag = 1;
+			$ret = 1;
 			last;
 		}
-		elsif (/Mirror Color\s+?GREEN\s+RED/) {
-			&execution("clpmdctrl -r $name_md");
-			last;
-		}
-		elsif (/Mirror Color\s+?GREEN\s+(GREEN|GRAY)/) {
+		elsif (/Mirror Color\s+?GREEN\s+(\S+)/) {
+			&execution("clplogcmd -m \"[exec-md-recovery] MD status is GREEN - [$1]\"");
 			$flag = 1;
 			last;
 		}
