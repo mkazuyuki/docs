@@ -7,7 +7,7 @@
 #   It is a countermeasure for that VM(s) which is in "invalid" or "power off" status left on the standby ESXi inventory after reboot on crash of the ESXi.
 
 use strict;
-#use FindBin;
+
 #-------------------------------------------------------------------------------
 # Configuration
 #-------------------------------------------------------------------------------
@@ -25,12 +25,10 @@ our $vma2 = "10.0.0.22";
 our $vmhba1 = "vmhba35";
 our $vmhba2 = "vmhba35";
 #-------------------------------------------------------------------------------
-#require($FindBin::Bin . "/vmconf.pl");
 
 # This line need for correct execution of vmware-cmd w/o password
 $ENV{"HOME"} = "/root";
 
-# VM operation command path
 my $vmk = "";	# vmk local
 my $vmkr = "";	# vmk remote
 my $vmhba = "";
@@ -58,7 +56,6 @@ exit $val;
 #-------------------------------------------------------------------------------
 sub iscsiRecovery{
 	my $ret = -1;
-	#esxcli --server 192.168.137.52 iscsi session list --adapter=vmhba33
 	my $cmd = "esxcli --server $vmk iscsi session list --adapter=$vmhba";
 	&execution($cmd);
 	foreach(@lines){
@@ -90,20 +87,12 @@ sub Monitor{
 	my @vmpo;	# VMs which are in power off state
 	my @vmiv;	# VMs which are in invalid status
 
-#	# Unregistering invalid VMs on LOCAL node
-#	$cmd  = "ssh -i ~/.ssh/id_rsa $vmk \"" . 
-#	"for a in \\\$(vim-cmd vmsvc/getallvms 2>&1 | grep invalid | awk \'{print \\\$4}\' | cut -d \\' -f2)\; " .
-#			"do echo Invalid VM ID[\\\$a]\; " .
-#			"vim-cmd vmsvc/unregister \\\$a 2>&1\;done\"";
-
 	# Finding out registered VMs in iSCSI datastore on LOCAL node
 	my $cmd = "ssh -i ~/.ssh/id_rsa $vmk \"vim-cmd vmsvc/getallvms 2>&1\"";
 	&execution($cmd);
 	foreach $a (@lines){
 		chomp $a;
 		#&Log("[D]! \t[$a]\n");
-		# TBD
-		# Add operation for unregistering inaccessible VMs
 		if ($a =~ /^(\d+).*\[$DatastoreName\] (.+\.vmx)/){
 			$vmx{$1} = $2;
 			&Log("[D] on LOCAL [$vmk] [$1][$2] exists\n");
@@ -115,6 +104,11 @@ sub Monitor{
 	}
 
 	# Unregistering invalid VMs on LOCAL node
+#	$cmd  = "ssh -i ~/.ssh/id_rsa $vmk \"" . 
+#	"for a in \\\$(vim-cmd vmsvc/getallvms 2>&1 | grep invalid | awk \'{print \\\$4}\' | cut -d \\' -f2)\; " .
+#			"do echo Invalid VM ID[\\\$a]\; " .
+#			"vim-cmd vmsvc/unregister \\\$a 2>&1\;done\"";
+
 	foreach (@vmiv){
 		$cmd = "ssh -i ~/.ssh/id_rsa $vmk \"vim-cmd vmsvc/unregister $_ 2>&1\;done\"";
 		&execution($cmd);
