@@ -9,14 +9,18 @@
 - genw-remote-node in vMA Cluster periodically executes "power on" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally shutdown the vMA VM
 - genw-remote-node in vMA Cluster periodically executes "starting cluster service" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally stop the cluster service.
 
+- The graceful shutdown procedure of ESXi
+  1. *cluster shutdown* for the vMA Cluster
+  2. *cluster shutdown* for the iSCSI Cluster
+  3. shutdown for both the ESXi.
 
 <!--
-- vMA VM, iSCSI VM ‚ÌŽ©“®‹N“®Ý’è
-- iSCSI network ‚Æ mirror network ‚Ì•ªŠ„
-- iSCSI—p VMkernel port ‚Ì’Ç‰Á
-- TSO, LRO, Jumbo frame ‚Ì–³Œø‰»
-- ssh ƒT[ƒrƒX‚ÌŽ©“®‹N“®Ý’è
-- vMA Cluster ‚Ì genw-remote-node ‚Í
-  - ‘ÎŒü vMA VM ‚Ì power off status ‚ð”FŽ¯‚·‚é‚Æ power on ‚ðŽÀs‚·‚éB]‚Á‚ÄAˆÓ}“I‚É vMA VM ‚ð power off ó‘Ô‚É‚·‚é‚Æ‚«‚ÍAvMA Cluster ‚Ì genw-remote-node ‚ð suspend ‚·‚é•K—v‚ª‚ ‚éB
-  - ‘ÎŒü vMA VM ‚Å ECƒT[ƒrƒX ‚Ì offline status ‚ð”FŽ¯‚·‚é‚Æ service start ‚ðŽÀs‚·‚éB]‚Á‚ÄAˆÓ}“I‚É ECƒT[ƒrƒX ‚ð offline status ‚É‚·‚é‚Æ‚«‚ÍAvMA Cluster ‚Ì genw-remote-node ‚ð suspend ‚·‚é•K—v‚ª‚ ‚éB
+- vMA VM, iSCSI VM ã®è‡ªå‹•èµ·å‹•è¨­å®š
+- iSCSI network ã¨ mirror network ã®åˆ†å‰²
+- iSCSIç”¨ VMkernel port ã®è¿½åŠ 
+- TSO, LRO, Jumbo frame ã®ç„¡åŠ¹åŒ–
+- ssh ã‚µãƒ¼ãƒ“ã‚¹ã®è‡ªå‹•èµ·å‹•è¨­å®š
+- vMA Cluster ã® genw-remote-node ã¯
+  - å¯¾å‘ vMA VM ã® power off status ã‚’èªè­˜ã™ã‚‹ã¨ power on ã‚’å®Ÿè¡Œã™ã‚‹ã€‚å¾“ã£ã¦ã€æ„å›³çš„ã« vMA VM ã‚’ power off çŠ¶æ…‹ã«ã™ã‚‹ã¨ãã¯ã€vMA Cluster ã® genw-remote-node ã‚’ suspend ã™ã‚‹å¿…è¦ãŒã‚ã‚‹ã€‚
+  - å¯¾å‘ vMA VM ã§ ECã‚µãƒ¼ãƒ“ã‚¹ ã® offline status ã‚’èªè­˜ã™ã‚‹ã¨ service start ã‚’å®Ÿè¡Œã™ã‚‹ã€‚å¾“ã£ã¦ã€æ„å›³çš„ã« ECã‚µãƒ¼ãƒ“ã‚¹ ã‚’ offline status ã«ã™ã‚‹ã¨ãã¯ã€vMA Cluster ã® genw-remote-node ã‚’ suspend ã™ã‚‹å¿…è¦ãŒã‚ã‚‹ã€‚
 -->
