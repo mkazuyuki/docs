@@ -219,6 +219,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
   - [Info] section
     - select [custom monitor] as [type] > input *genw-remote-esxi* > [Next]
   - [Monitor (common)] section
+    - input *180* as [Interval]
     - input *60* as [Wait Time ot Start Monitoring]
     - select [Active] as [Monitor Timing]
     - [Browse] button

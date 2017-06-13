@@ -14,33 +14,40 @@ This text descrives how to create iSCSI Target cluster (with fileio backstore) o
 - RHEL7.2 x86_64
 - ECX3.3.3-1
 
+## Network configuration example
+![Netowrk configuraiton](HAUC-NW-Configuration.jpg)
+
 ## Nodes configuration example
 
-iSCSI Target nodes
+iSCSI Target Cluster
 
 |			| Primary		| Secondary		| FIP
 |---			|---			|---			|---
-| Hostname		| node-t1		| node-t2		|
+| Hostname		| iscsi11		| iscsi2		|
+| root password		|			|			|
+|			|			|			|
 | IP Address for iSCSI	| 192.168.0.11/24	| 192.168.0.12/24	| 192.168.0.10
 | IP Address for mirror	| 192.168.1.11/24	| 192.168.1.12/24	| 
-| root password		| passwd1		| passwd2		|
+| root password		|			|			|
 
 
 ESXi hosts
 
-|			| Primary	| Secondary	|
-|---			|---		|---		|
-| Hostname		| esxi01	| esxi02	|
-| VMkernel for iSCSI	| 192.168.0.1	| 192.168.0.2	|
-| iSCSI Initiator WWN	| 
-| Management		| 10.0.0.1	| 10.0.0.2	|
-| root password		| passwd1	| passwd2	|
+|				| Primary	| Secondary	|
+|---				|---		|---		|
+| Hostname			| esxi1		| esxi2		|
+| root password			| passwd1	| passwd2	|
+|				|		|		|
+| VMkernel for iSCSI Initiator	| 192.168.0.1	| 192.168.0.2	|
+| iSCSI Initiator WWN		|		|		|
+|				|		|		|
+| Management			| 10.0.0.1	| 10.0.0.2	|
 
 
 | Role of the node		 | Host name | IP address			|
 |--------------------------------|-----------|----------------------------------|
-| Primary iSCSI Target Node	 | node-t1   | 192.168.0.11/24, 192.168.1.11/24	|
-| Secondary iSCSI Target Node	 | node-t2   | 192.168.0.12/24, 192.168.1.12/24	|
+| Primary iSCSI Target Node	 | iscsi1    | 192.168.0.11/24, 192.168.1.11/24	|
+| Secondary iSCSI Target Node	 | iscsi2    | 192.168.0.12/24, 192.168.1.12/24	|
 | Primarry ESXi			 | esxi1     | 192.168.0.1/24 , 10.0.0.1/24	|
 | Secondary ESXi                 | esxi2     | 192.168.0.2/24 , 10.0.0.2/24	|
 | Primarry iSCSI Initiator Node  | node-i1   | 192.168.0.21/24			|
@@ -50,7 +57,7 @@ ESXi hosts
 
 | Cluster Resources	   | Value			   |
 |--------------------------|-------------------------------|
-| FIP			   | 192.168.0.10		   |
+| FIP for iSCSI Target     | 192.168.0.10		   |
 | Cluster Partition	   | /dev/sdb1			   |
 | Data Partition	   | /dev/sdb2			   |
 | WWN of iSCSI Target	   | iqn.2016-10.test.target:t1    |
@@ -59,13 +66,20 @@ ESXi hosts
 
 ## Procedure
 
+### Creating VMs on both ESXi
+
+- 3 vritual NICs
+- 4 virtual CPUs
+- 2 virtual HDDs one is for OS and another is for storing UC VMs.
+
+
 ### Installing OS and packages
 
 On both iSCSI Target Nodes,
 
-- Install RHEL7 and configure
-	- hostname (e.g. node-t1, node-t2)
-	- IP address (e.g. 192.168.0.11 for node-t1, 192.168.0.12 for node-t2)
+- Install RHEL7.2 and configure
+	- hostname (e.g. iscsi1, iscsi2)
+	- IP address (e.g. 10.0.0.11, 192.168.0.11, 192.168.1.11 for iscsi1)
 	- block device for MD resoruce (e.g. /dev/sdb1 and /dev/sdb2).
 
 - Install packages and EC licenses
@@ -74,6 +88,7 @@ On both iSCSI Target Nodes,
 		# rpm -ivh expresscls.*.rpm
 		# clplcnsc -i [base-license-file] -p BASE33
 		# clplcnsc -i [replicator-license-file] -p REPL33
+		# reboot
 
 ### Configuring iSCSI Target Cluster
 
