@@ -7,6 +7,7 @@ This text descrives how to create iSCSI Target cluster (with fileio backstore) o
 ----
 
 ## Versions used
+- ESXi 6.0
 - RHEL7.2 x86_64
 - ECX3.3.3-1
 
@@ -34,7 +35,7 @@ ESXi hosts
 | Hostname			| esxi1		| esxi2		|
 | root password			| passwd1	| passwd2	|
 |				|		|		|
-| Management			| 10.0.0.1	| 10.0.0.2	|
+| Management IP			| 10.0.0.1	| 10.0.0.2	|
 |				|		|		|
 | VMkernel for iSCSI Initiator	| 192.168.0.1	| 192.168.0.2	|
 | WWN of iSCSI Initiator	| iqn.1998-01.com.vmware:1	| iqn.1998-01.com.vmware:2	|

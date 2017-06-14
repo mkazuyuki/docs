@@ -10,9 +10,12 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
 - vSphere Management Assistant 6.0
 - EXPRESSCLUSTER X for Linux 3.3.3-1
 
+## Network configuration example
+![Netowrk configuraiton](HAUC-NW-Configuration.jpg)
+
 ## Setup Procedure
-- Prepare two nodes of ESXi (*esxi01* and *esxi02*) with shared-storage. The shared storage could be made of the iSCSI Target Cluster by ECX.
-- Setup a VM (to be protected by ECX) on *esxi01* and name it *VM1* for example.
+- Prepare two nodes of ESXi (*esxi1* and *esxi2*) with shared-storage. The shared storage could be made of the iSCSI Target Cluster by ECX.
+- Setup a VM (to be protected by ECX) on *esxi1* and name it *VM1* for example.
   The VM should be saved on the shared storage.
 
 ### Configuring Failover Group
@@ -24,27 +27,27 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
 
 		|		| Primary	| Secondary	|
 		|---		|---		|---		|
-		| Hostname	| esxi01	| esxi02	|
-		| VMkernel port	| 10.0.0.1	| 10.0.0.2	|
+		| Hostname	| esxi1		| esxi2		|
 		| root password	| passwd1	| passwd2	|
+		| Management IP	| 10.0.0.1	| 10.0.0.2	|
 
     - vMA Example:
 
 		|		| Primary	| Secondary	| Note	|
 		|---		|---		|---		|---	|
-		| 3) Hostname	| vma01		| vma02		| need to be independent hostname ( "localhost" is inappropriate ) |
+		| 3) Hostname	| vma1		| vma2		| need to be independent hostname ( "localhost" is inappropriate ) |
 		| 6) IP Address	| 10.0.0.21	| 10.0.0.22	| need to be independent static IP Address |
 
-    The IP address of vma01 and vma02 should be possible to communicate with VMkernel port of both ESXi and VM(s) to be monitored.
+    The IP address of vma1 and vma2 should be possible to communicate with VMkernel port of both ESXi and VM(s) to be monitored.
 
     - VM to be controlled:
 
 		| Hostname	| IP address	|
 		|---		|---		|
-		| vm1   	| 10.0.0.100	|
+		| vm1   	| 10.0.0.101	|
 
 
-- On vma01 and vma02 
+- On vma1 and vma2 
 
   - Put ECX rpm file and its license file by using scp command and so on.
   - Install ECX
@@ -107,7 +110,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     - [Finish] > [Yes]
     - [File] menu > [Apply the Configuration File]
 
-  - on the console of both node (vma01, vma02)  
+  - on the console of both node (vma1, vma2)  
     Register root password of both ESXi to enable vmware-cmd and esxcli command accessing ESXi without password.
 
     	> sudo bash
@@ -124,7 +127,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     	# exit
     	>
     
-  - on vma01 console
+  - on vma1 console
     setup ESXi thumbprint to use esxcli command
 
     	$ sudo bash
@@ -133,7 +136,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
     	New entry added successfully
 
-  - on vma02 console
+  - on vma2 console
     setup ESXi thumbprint to use esxcli command
 
     	$ sudo bash
@@ -143,7 +146,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     	New entry added successfully
 
 <!--
-  - on vma01
+  - on vma1
     - Get the path information for the VMn with the command.  
       This information will be used when editing *vmconf.pl*.
 
@@ -155,7 +158,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     - copy *vmconf.pl* to /opt/nec/clusterpro/scripts/failover-VMn/exec-VMn/vmconf.pl
     - edit *vmconf.pl* accordingly
     - copy *vmconf.pl* to /opt/nec/clusterpro/scripts/monitor.s/genw/vmconf.pl
-    - distribute the configuration (vmconf.pl) to vma02
+    - distribute the configuration (vmconf.pl) to vma2
 
     		# clpcfctrl --push
 -->
@@ -166,18 +169,18 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     - [Service] menu > [Start Cluster]
 
 ### Configuring Monitor resource
-- On both vSphere Client for esxi01 and esxi02
+- On both vSphere Client for esxi1 and esxi2
   - click ESXi host icon in left pane.
   - Select [Configuration] tab > [Security Profile] > [Properties] of Services
   - Check [Start and stop with host] > push [Start] button and make "ssh" running.
   
-- On vma01 console
-  - copy public key of root user to esxi02
+- On vma1 console
+  - copy public key of root user to esxi2
 
     	> sudo bash
     	# scp ~/.ssh/id_rsa.pub 10.0.0.2:/etc/ssh/keys-root/
 
-  - remote login to esxi02 as root user and configure ssh for remote execution from vma01.
+  - remote login to esxi2 as root user and configure ssh for remote execution from vma1.
 
     	# ssh 10.0.0.2
 	Password:
@@ -189,12 +192,12 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     	# exit
     	> exit
 
-- On vma02 console (do the same for esxi01 (10.0.0.1))
-  - copy public key of root user to esxi01
-  - remote login to esxi01 as root user and configure ssh for remote execution from vma02.
+- On vma2 console (do the same for esxi1 (10.0.0.1))
+  - copy public key of root user to esxi1
+  - remote login to esxi1 as root user and configure ssh for remote execution from vma2.
 
 <!--
-- on vma01
+- on vma1
   - edit */opt/nec/clusterpro/scripts/monitor.s/genw-esxi-inventory/vmconf.pl*
 
     	> sudo bash
@@ -225,19 +228,19 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     - [Browse] button
       - [exec-VMn] > [OK]
     - [Server]
-      - select [Select] > [Add] (adding vma01) > [OK]
+      - select [Select] > [Add] (adding vma1) > [OK]
     - [Next]
   - [Monitor (special)] section
     - [Replace]
       - select *genw-remote-esxi.pl* > [Open] > [Yes]
     - [Edit]
       - write $DatastoreName as iSCSI datastore
-      - write $vmk1 as IP address for esxi01
-      - write $vmk2 as IP address for esxi02
-      - write $vma1 as IP address for vma01
-      - write $vma2 as IP address for vma02
-      - write $vmhba1 as the name of iSCSI Software Adapter on esxi01
-      - write $vmhba2 as the name of iSCSI Software Adapter on esxi02
+      - write $vmk1 as IP address for esxi1
+      - write $vmk2 as IP address for esxi2
+      - write $vma1 as IP address for vma1
+      - write $vma2 as IP address for vma2
+      - write $vmhba1 as the name of iSCSI Software Adapter on esxi1
+      - write $vmhba2 as the name of iSCSI Software Adapter on esxi2
     - input */opt/nec/clusterpro/log/genw-esxi.log* as [Log Output Paht] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
@@ -261,7 +264,7 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
   - [Monitor (special)] section
     - [Add]
       - input IP address of VMn (e.g. 10.0.0.100)  
-        **[ Note ]**  Adding NIC on vma01 and vma02 is required if the VMn belongs to the defferent network than vma01 and vma02.
+        **[ Note ]**  Adding NIC on vma1 and vma2 is required if the VMn belongs to the defferent network than vma1 and vma2.
 	Configure the IP address for the additional NIC to have the same network address with VMn.  
 		/etc/sysconfig/networking/devices/ifcfg-eth1  
 	and symbolic link file  
@@ -288,12 +291,12 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
     - [Replace]
       - select *genw-remote-node.pl* > [Open] > [Yes]
     - [Edit]
-      - write $VMNAME1 as VM name of vma01 in the esx01 inventory
-      - write $VMNAME2 as VM name of vma02 in the esx02 inventory
-      - write $VMIP1 as IP address for vma01
-      - write $VMIP2 as IP address for vma02
-      - write $VMK1 as IP address for esxi01
-      - write $VMK2 as IP address for esxi02
+      - write $VMNAME1 as VM name of vma1 in the esx01 inventory
+      - write $VMNAME2 as VM name of vma2 in the esx02 inventory
+      - write $VMIP1 as IP address for vma1
+      - write $VMIP2 as IP address for vma2
+      - write $VMK1 as IP address for esxi1
+      - write $VMK2 as IP address for esxi2
     - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Paht] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
