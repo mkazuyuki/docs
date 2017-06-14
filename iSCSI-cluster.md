@@ -7,6 +7,7 @@ This text descrives how to create iSCSI Target cluster (with fileio backstore) o
 ----
 
 ## Versions used
+- ESXi 6.0
 - RHEL7.2 x86_64
 - ECX3.3.3-1
 
@@ -320,4 +321,3 @@ On node-i1
 ## Revision history
 
 2016.11.29 Miyamto Kazuyuki	1st issue
-
