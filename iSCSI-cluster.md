@@ -6,10 +6,6 @@ This text descrives how to create iSCSI Target cluster (with fileio backstore) o
 
 ----
 
-## Revision histoory
-
-2016.11.29 Miyamto Kazuyuki	1st issue
-
 ## Versions used
 - RHEL7.2 x86_64
 - ECX3.3.3-1
@@ -38,10 +34,10 @@ ESXi hosts
 | Hostname			| esxi1		| esxi2		|
 | root password			| passwd1	| passwd2	|
 |				|		|		|
-| VMkernel for iSCSI Initiator	| 192.168.0.1	| 192.168.0.2	|
-| iSCSI Initiator WWN		|		|		|
-|				|		|		|
 | Management			| 10.0.0.1	| 10.0.0.2	|
+|				|		|		|
+| VMkernel for iSCSI Initiator	| 192.168.0.1	| 192.168.0.2	|
+| WWN of iSCSI Initiator	| iqn.1998-01.com.vmware:1	| iqn.1998-01.com.vmware:2	|
 
 
 | Role of the node		 | Host name | IP address			|
@@ -60,9 +56,9 @@ ESXi hosts
 | FIP for iSCSI Target     | 192.168.0.10		   |
 | Cluster Partition	   | /dev/sdb1			   |
 | Data Partition	   | /dev/sdb2			   |
-| WWN of iSCSI Target	   | iqn.2016-10.test.target:t1    |
-| WWN of iSCSI Initiator 1 | iqn.2016-10.test.initiator:i1 |
-| WWN of iSCSI Initiator 2 | iqn.2016-10.test.initiator:i2 |
+| WWN of iSCSI Target	   | iqn.2016-10.com.ec:1          |
+| WWN of iSCSI Initiator 1 | iqn.1998-01.com.vmware:1      |
+| WWN of iSCSI Initiator 2 | iqn.1998-01.com.vmware:2      |
 
 ## Procedure
 
@@ -195,12 +191,12 @@ This resource is used for the **special case**
     - [Replace]
       - select *genw-remote-node.pl* > [Open] > [Yes]
     - [Edit]
-      - write $VMNAME1 as VM name of node-t1 in the esx01 inventory
-      - write $VMNAME2 as VM name of node-t2 in the esx02 inventory
-      - write $VMIP1 as IP address for node-t1
-      - write $VMIP2 as IP address for node-t2
-      - write $VMK1 as IP address for esxi01
-      - write $VMK2 as IP address for esxi02
+      - write $VMNAME1 as VM name *iscsi1* in the esxi1 inventory
+      - write $VMNAME2 as VM name *iscsi2* in the esxi2 inventory
+      - write $VMIP1 as IP address for iscsi1
+      - write $VMIP2 as IP address for iscsi2
+      - write $VMK1 as IP address for esxi1 which accessible from iscsi1
+      - write $VMK2 as IP address for esxi2 which accessible from iscsi2
     - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Paht] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
@@ -212,11 +208,11 @@ This resource is used for the **special case**
 
 #### Apply the configuration
 - Click [File] > [Apply Configuration]
-- Reboot node-t1, node-t2 and wait for the completion of starting of the cluster *failover-iscsi*
+- Reboot iscsi1, iscsi2 and wait for the completion of starting of the cluster *failover-iscsi*
 
 ### Configuring iSCSI Target
-On node-t1, create fileio backstore and configure it as backstore for the iSCSI Target.
-- Login to the console of node-t1.
+On iscsi1, create fileio backstore and configure it as backstore for the iSCSI Target.
+- Login to the console of iscsi1.
 
 - Start (iSCSI) target configuration tool
 
@@ -234,18 +230,18 @@ On node-t1, create fileio backstore and configure it as backstore for the iSCSI 
 - Creating IQN
 
 		> cd /iscsi
-		> create iqn.2016-10.test.target:t1
+		> create iqn.2016-10.com.ec:1
 
 - Assigning LUN to IQN
 
-		> cd /iscsi/iqn.2016-10.test.target:t1/tpg1/luns
+		> cd /iscsi/iqn.2016-10.com.ec:1/tpg1/luns
 		> create /backstores/fileio/idisk
 
 - Allow machine (IQN of iSCSI Initiator) to scan the iSCSI target.
 
-		> cd /iscsi/iqn.2016-10.test.target:t1/tpg1/acls
-		> create iqn.2016-10.test.initiator:i1
-		> create iqn.2016-10.test.initiator:i2
+		> cd /iscsi/iqn.2016-10.com.ec:1/tpg1/acls
+		> create iqn.1998-01.com.vmware:1
+		> create iqn.1998-01.com.vmware:2
 
 - Save config and exit.
 
@@ -254,10 +250,10 @@ On node-t1, create fileio backstore and configure it as backstore for the iSCSI 
 
 - Copy the saved target configuration to the other node.
 
-		# scp /etc/target/saveconfig.json node-t2:/etc/target/
+		# scp /etc/target/saveconfig.json iscsi2:/etc/target/
 
 <!--
-On node-t2,
+On iscsi2,
 
 - Activate the mirror disk
 
@@ -274,12 +270,12 @@ On node-t2,
 - Select [Configuration] tab in right pane.
 - Select [Storage Adapter] > [Add]
 - Configure [iSCSI Software Adapter]
-  - set WWN [iqn.2016-10.test.initiator:i1] for the adapter
+  - set WWN [iqn.1998-01.com.vmware:1] for the adapter
   - set IP address *192.168.0.10* for the iSCSI Target
 - Select [Storage] > [Add Storage]
 - Create [iSCSI] as datastore in the iSCSI Target
 
-Do the same for esxi2.
+Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 
 ### [Reference] Linux iSCSI Initiator configuration for general system
@@ -292,7 +288,7 @@ On node-i1
 
 - Re-write "InitiatorName" and save it.
 
-		InitiatorName=iqn.2016-10.test.initiator:i1
+		InitiatorName=iqn.1998-01.com.vmware:1
 
 - Restart iSCSI Initiator (restart iscsid due to rename of initiator)
 
@@ -308,15 +304,20 @@ On node-i1
 
 - Login to iSCSI Target which specified as -T argument.
 
-		# iscsiadm -m node -T iqn.2016-10.test.target:t1 -p 192.168.0.10 -l
+		# iscsiadm -m node -T iqn.2016-10.com.ec:1 -p 192.168.0.10 -l
 
 - Format/Initialise the iSCSI device and mount
 
 		# mkfs -t ext4 <iSCSI Device Name>
-		# mount /dev/disk/by-path/ip-192.168.0.10:3260-iscsi-iqn.2016-10.test.target:t1-lun-0-part1 /mnt/
+		# mount /dev/disk/by-path/ip-192.168.0.10:3260-iscsi-iqn.2016-10.com.ec:1-lun-0-part1 /mnt/
 <!--
 		# dd if=/dev/zero of=<Cluster Partition Device Name>
 
 		e.g.
-		# dd if=/dev/zero of=/dev/disk/by-path/ip-192.168.137.134:3260-iscsi-iqn.2016-10.test.target:t1-lun-0-part1
+		# dd if=/dev/zero of=/dev/disk/by-path/ip-192.168.137.134:3260-iscsi-iqn.2016-10.com.ec:1-lun-0-part1
 -->
+
+## Revision history
+
+2016.11.29 Miyamto Kazuyuki	1st issue
+
