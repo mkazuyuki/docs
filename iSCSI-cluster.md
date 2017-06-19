@@ -5,11 +5,11 @@
 This text descrives how to create iSCSI Target cluster (with fileio backstore) on EXPRESSCLUSTER for Linux.
 
 ----
+## Versions used for the validation
+- VMware vSphere Hypervisor 6.0 (VMware ESXi 6.0)
+- Red Hat Enterprise Linux 7.2 x86_64
+- EXPRESSCLUSTER X for Linux 3.3.3-1
 
-## Versions used
-- ESXi 6.0
-- RHEL7.2 x86_64
-- ECX3.3.3-1
 
 ## Network configuration example
 ![Netowrk configuraiton](HAUC-NW-Configuration.jpg)
@@ -65,9 +65,10 @@ ESXi hosts
 
 ### Creating VMs on both ESXi
 
+Configure each VM to have
 - 3 vritual NICs
 - 4 virtual CPUs
-- 2 virtual HDDs one is for OS and another is for storing UC VMs.
+- 2 virtual HDDs, one for OS and another for MD resource which stores UC VMs.
 
 
 ### Installing OS and packages
