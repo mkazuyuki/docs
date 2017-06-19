@@ -13,10 +13,10 @@ use strict;
 # Configuration
 
 # VM name in the ESXi inventory and IP addresses of the VM
-my $VMNAME1	= 'iSCSI01';
+my $VMNAME1	= 'iscsi1';
 my $VMIP1	= "192.168.0.11";
 
-my $VMNAME2	= 'iSCSI02';
+my $VMNAME2	= 'iscsi2';
 my $VMIP2	= "192.168.0.12";
 
 # IP address of VMKernel port
