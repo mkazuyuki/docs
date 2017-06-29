@@ -109,6 +109,30 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
       [Finish]
     - [Finish] > [Yes]
     - [File] menu > [Apply the Configuration File]
+    - **OPTIONAL** : Do the followings if iSCSI Target Cluster and vMA Cluster need to be failed over simultaneously.
+        ----
+        - Right click [failover-VMn] in left pane > [Add Resource]
+        - Select [Type] as [execute resource] > Input [*exec-VMn-datastore*] as [Name] > [Next]
+        - [Next]
+        - [Next]
+        - Select [start.sh] > [Replace] > Select [*exec-vm-datastore.sh*]
+        - [Edit] > followings need to be specified in the start.sh.
+             - the name of the failover group in iSCSI Target Cluster (e.g. failover-iscsi) as *GRP*.
+
+             		GRP="failover-iscsi"
+             
+             - IP address for primary node of iSCSI Target Cluster as *IP1*,
+	       and for secondary node as *IP2*. These IP addresses should be accessible from vMA Cluster nodes.
+             
+             		IP1="10.0.0.11"
+             		IP2="10.0.0.12"
+             
+        - [Tuning] > [Maintenance] tab > Input [*/opt/nec/clusterpro/log/exec-VMn-datastore.log*] as [Log Outpu Path] > Check [Rotate Log] > [OK]
+        - [Finish]
+        - Right click [exec-VMn] in right pane > [Properties]
+        - [Dependency] tab > Uncheck [Follow the default dependency] > Click [Add] for exec-datastore > [OK]
+        - [File] menu > [Apply the Configuration File]
+        ----
 
   - on the console of both node (vma1, vma2)  
     Register root password of both ESXi to enable vmware-cmd and esxcli command accessing ESXi without password.
