@@ -163,7 +163,7 @@ This resource is used for the **special case**
   - [Info] section
     - select [custom monitor] as [type] > input *genw-md* > [Next]
   - [Monitor (common)] section
-    - input *60* as [Wait Time ot Start Monitoring]
+    - input *60* as [Wait Time to Start Monitoring]
     - select [Active] as [Monitor Timing]
     - [Browse] button
       - select [md1] > [OK]

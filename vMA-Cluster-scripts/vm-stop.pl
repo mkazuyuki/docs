@@ -10,8 +10,8 @@ use FindBin;
 # The path to VM configuration file. This must be absolute UUID-based path.
 # like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
 our @cfg_paths = (
-#"/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/vm1/vm1.vmx",
-"/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/cent7/cent7.vmx"
+#'/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/vm1/vm1.vmx'
+'/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/cent7/cent7.vmx'
 );
 
 # The Datastore name which the VM is stored.
