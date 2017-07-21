@@ -9,10 +9,10 @@
 - genw-remote-node in vMA Cluster periodically executes "power on" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally shutdown the vMA VM
 - genw-remote-node in vMA Cluster periodically executes "starting cluster service" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally stop the cluster service.
 
-- The graceful shutdown procedure of ESXi
-  1. *cluster shutdown* for the vMA Cluster
-  2. *cluster shutdown* for the iSCSI Cluster
-  3. shutdown for both the ESXi.
+- The graceful shutdown procedure of both ESXi
+  1. Issue *cluster shutdown* for the vMA Cluster
+  2. Issue *cluster shutdown* for the iSCSI Cluster
+  3. Issue *shutdown* for each the ESXi.
 
 <!--
 - vMA VM, iSCSI VM の自動起動設定
