@@ -17,7 +17,7 @@ This document describes how to extend MD resource without (re)format.
 		# systemctl disable clusterpro
 		# systemctl disable clusterpro_md
 
-	On either of the VM, reboot the cluster
+	On either of the VM, shutdown the cluster
 
 		# clpstdn
 
