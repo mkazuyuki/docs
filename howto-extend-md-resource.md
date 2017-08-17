@@ -1,8 +1,8 @@
-# How to extend MD resource in the iSCSI Target Cluster
+# How to extend MD resource in the iSCSI Target Cluster running on ESXi
 
 ----
 
-[ECX Reference Guide][1] P.1331 "Changing offset or size of a partition on mirror disk resource" describes the method to extend MD resource. However its flow is **backup**, resize, format and **restore**.
+[ECX Reference Guide][1] P.1331 "Changing offset or size of a partition on mirror disk resource" describes the method to extend MD resource. However its rough flow is backup, resize, **format** then restore. Yes, this flow includes "format" which you may dislike .
 
 This document describes how to extend MD resource without (re)format.
 
@@ -11,24 +11,35 @@ This document describes how to extend MD resource without (re)format.
 ----
 
 ## Steps to extend the data partition of the MD resource
+1. On Cluster Manager GUI, Make sure [Execute initial mkfs] is set to OFF.
 
-1. On the both VM, set the cluster not to start automatically
+	1. open Cluster Manager GUI
+	2. change to [Config Mode] ( from [Operation Mode] )
+	3. right click [md1] icon in left pane > [properties] 
+	4. [Detailes] tab > [Tuning] button
+	5. [Mirror] tab
+	6. Uncheck [Execute initial mkfs] > [OK]
+	7. [OK]
+	8. if you changed [Execute initial mkfs] parameter in above  
+	   [File] menu > [Apply Configuration] 
 	
+2. On the both VM console, set the cluster not to start automatically
+
 		# systemctl disable clusterpro
 		# systemctl disable clusterpro_md
 
-	On either of the VM, shutdown the cluster
+	On either of the VM console, shutdown the cluster
 
 		# clpstdn
 
 	The both nodes become power-off
 
-2. On the both VM, extend the virtual hdd (.vmdk) which contains data-partition by vSphere Client then power-on the VM.
+3. On vSphere Client, for both VM, extend the size of the virtual HDD (.vmdk) which contains data-partition of the MD resource, then power-on the VM.
 
 	https://kb.vmware.com/selfservice/microsites/search.do?cmd=displayKC&docType=kc&docTypeID=DT_KB_1_1&externalId=1007266
 
-3. extend the data-partition of the MD resource
-	
+4. extend the data-partition of the MD resource
+
 		# fdisk /dev/sdb
 		# resize2fs /dev/sdb2
 
@@ -41,11 +52,11 @@ This document describes how to extend MD resource without (re)format.
 	https://kb.vmware.com/selfservice/search.do?cmd=displayKC&docType=kc&docTypeID=DT_KB_1_1&externalId=1004071
 	https://kb.vmware.com/selfservice/search.do?cmd=displayKC&docType=kc&docTypeID=DT_KB_1_1&externalId=1006371
 
-4. initialize the cluster-partition of the MD resource. (Note : not for data-partition but for cluster-partition)
+5. initialize the cluster-partition of the MD resource. (Note : not for data-partition but for cluster-partition)
 
 		# clpmdinit --create force <Mirror_disk_resource_name>
 
-5. On the both VM, set the cluster to start automatically then reboot.
+6. On the both VM, set the cluster to start automatically then reboot.
 
 		# systemctl enable clusterpro
 		# systemctl enable clusterpro_md
@@ -53,6 +64,6 @@ This document describes how to extend MD resource without (re)format.
 
 	The servers are started as a cluster.
 
-6. The same process as the initial mirror construction at cluster creation is performed after a cluster is started. Run the following command or use the WebManager to check if the initial mirror construction is completed.
+7. The same process as the initial mirror construction at cluster creation is performed after a cluster is started. Run the following command or use the WebManager to check if the initial mirror construction is completed.
 
 		# clpmdstat --mirror <Mirror_disk_resource_name>
