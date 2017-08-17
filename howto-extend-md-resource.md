@@ -23,22 +23,22 @@ This document describes how to extend MD resource without (re)format.
 	8. if you changed [Execute initial mkfs] parameter in above  
 	   [File] menu > [Apply Configuration] 
 	
-2. On the both VM console, set the cluster not to start automatically
+2. On the both VM console, set the cluster services not to start automatically.
 
 		# systemctl disable clusterpro
 		# systemctl disable clusterpro_md
 
-	On either of the VM console, shutdown the cluster
+3. On either of the VM console, issue *clpstdn* command to shutdown the cluster.
 
 		# clpstdn
 
 	The both nodes become power-off
 
-3. On vSphere Client, for both VM, extend the size of the virtual HDD (.vmdk) which contains data-partition of the MD resource, then power-on the VM.
+4. On vSphere Client, for both VM, extend the size of the virtual HDD (.vmdk) which contains data-partition of the MD resource, then power-on the VM.
 
 	https://kb.vmware.com/selfservice/microsites/search.do?cmd=displayKC&docType=kc&docTypeID=DT_KB_1_1&externalId=1007266
 
-4. extend the data-partition of the MD resource
+5. On the both VM console, extend the data-partition of the MD resource.
 
 		# fdisk /dev/sdb
 		# resize2fs /dev/sdb2
@@ -52,11 +52,11 @@ This document describes how to extend MD resource without (re)format.
 	https://kb.vmware.com/selfservice/search.do?cmd=displayKC&docType=kc&docTypeID=DT_KB_1_1&externalId=1004071
 	https://kb.vmware.com/selfservice/search.do?cmd=displayKC&docType=kc&docTypeID=DT_KB_1_1&externalId=1006371
 
-5. initialize the cluster-partition of the MD resource. (Note : not for data-partition but for cluster-partition)
+6. On either of the VM console, initialize the cluster-partition of the MD resource. (Note : not for data-partition but for cluster-partition)
 
 		# clpmdinit --create force <Mirror_disk_resource_name>
 
-6. On the both VM, set the cluster to start automatically then reboot.
+7. On the both VM console, set the cluster services to start automatically then reboot.
 
 		# systemctl enable clusterpro
 		# systemctl enable clusterpro_md
@@ -64,6 +64,7 @@ This document describes how to extend MD resource without (re)format.
 
 	The servers are started as a cluster.
 
-7. The same process as the initial mirror construction at cluster creation is performed after a cluster is started. Run the following command or use the WebManager to check if the initial mirror construction is completed.
+8. The same process as the initial mirror construction at cluster creation is performed after a cluster is started.
+   Run the following command or use the Cluster Manager to check if the initial mirror construction is completed.
 
 		# clpmdstat --mirror <Mirror_disk_resource_name>
