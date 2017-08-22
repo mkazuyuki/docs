@@ -1,20 +1,78 @@
-# Howto setup iSCSI Target Cluster on EXPRESSCLUSTER for Linux with fileio backstore
+.
+# EXPRESSCLUSTER Quick Start Guide for vSphere ESXi Host Cluster with iSCSI Target Cluster
+
+--------
+
+## Disclaimer
+
+The contents of this document are subject to change without notice. NEC Corporation assumes no responsibility for technical or editorial mistakes in or omissions from this document. To obtain the benefits of the product, it is the customer’s responsibility to install and use the product in accordance with this document. The copyright for the contents of this document belongs to NEC Corporation. Copying, altering, or translating this document, in full or in part, without the permission of NEC Corporation, is prohibited.
+
+--------
+
+## About this Guide
+
+This guide provides a hands-on "Quick Start" set of instructions for the
+EXPRESSCLUSTER X for Linux. The guide assumes its readers to have Linux system administration knowledge and skills with experience in installation and configuration of CentOS or Red Hat Enterprise Linux operating systems, Storages, and Networks. The guide includes step-by-step instructions to install and configure EXPRESSCLUSTER X with iSCSI Target, vSphere Management Assistant (vMA) and vSphere ESXi.
+
+This guide covers the following topics:
+
+Chapter 1: Overview - describes the general steps of setup procedure.
+
+Chapter 2: System Requirements and Planning - describes the overall system requirements including a set of tables for planning the installation and configuration of EXPRESSCLUSTER.
+
+Chapter 3: Setup Procedure - describes the configurations required for ESXi Host Clustering.
+
+Chapter 4: Common Maintenance Tasks - describes how to perform common maintenance tasks.
 
 ----
 
-This text describes how to create iSCSI Target cluster (with fileio backstore) on EXPRESSCLUSTER for Linux.
+## Where to go for more information
+
+Refer to additional documentation under the "documentation" directory on the EXPRESSCLUSTER X distribution CD or archive file.
+For any further information, please visit the EXPRESSCLUSTER web-site at
+
+http://www.nec.com/expresscluster
+
+The following guides are available for instant support:  
+
+- Getting Started Guide - This guide explains general cluster concepts and overview of EXPRESSCLUSTER functionality.
+
+- Installation Guide - This guide explains EXPRESSCLUSTER installation and configuration procedures in detail.
+
+- Reference Guide - This is a reference of commands that can be put in EXPRESSCLUSTER scripts and maintenance commands that can be executed from the server command prompt.
+
+The guides stated in above can also be found at:
+
+http://www.nec.com/global/prod/expresscluster/en/support/manuals.html
+
+The EXPRESSCLUSTER team can also be contacted via the following E-mail address:
+
+info@expresscluster.jp.nec.com
 
 ----
-## Versions used for the validation
+
+## Overview
+
+The general procedure to deploy MYSQL Server with EXPRESSCLUSTER X on two
+server machines (Primary and Standby
+
+----
+
+## System Requirements and Planning
+describes the overall system requirements including a set of tables for planning the installation and configuration of EXPRESSCLUSTER.
+
+### Physical Servers
+- 3 LAN ports (iSCSI, ECX data-mirroring, management)
+
+### Versions used on the validation
 - VMware vSphere Hypervisor 6.0 (VMware ESXi 6.0)
 - Red Hat Enterprise Linux 7.2 x86_64
 - EXPRESSCLUSTER X for Linux 3.3.3-1
 
-
-## Network configuration example
+### Network configuration example
 ![Netowrk configuraiton](HAUC-NW-Configuration.jpg)
 
-## Nodes configuration example
+### Nodes configuration example
 
 iSCSI Target Cluster
 
@@ -45,11 +103,9 @@ ESXi hosts
 |--------------------------------|-----------|----------------------------------|
 | Primary iSCSI Target Node	 | iscsi1    | 192.168.0.11/24, 192.168.1.11/24	|
 | Secondary iSCSI Target Node	 | iscsi2    | 192.168.0.12/24, 192.168.1.12/24	|
-| Primary ESXi			 | esxi1     | 192.168.0.1/24 , 10.0.0.1/24	|
+| Primarry ESXi			 | esxi1     | 192.168.0.1/24 , 10.0.0.1/24	|
 | Secondary ESXi                 | esxi2     | 192.168.0.2/24 , 10.0.0.2/24	|
-|                                |           |                                  |
-| Primary iSCSI Initiator Node   | node-i1   | 192.168.0.21/24			|
-| Secondary iSCSI Initiator Node | node-i2   | 192.168.0.22/24			|
+
 
 ## Parameters example
 
@@ -61,6 +117,21 @@ ESXi hosts
 | WWN of iSCSI Target	   | iqn.2016-10.com.ec:1          |
 | WWN of iSCSI Initiator 1 | iqn.1998-01.com.vmware:1      |
 | WWN of iSCSI Initiator 2 | iqn.1998-01.com.vmware:2      |
+
+----
+
+## Setup Procedure
+- describes the configurations required for ESXi Host Clustering.
+
+----
+
+## Common Maintenance Tasks
+- describes how to perform common maintenance tasks.
+
+
+==========
+==========
+
 
 ## Procedure
 
@@ -95,7 +166,7 @@ On the client PC,
 
 - Open EXPRESSCLUSTER Builder ( http://192.168.0.11:29003/ )
 - Configure the cluster *iSCSI-Cluster* which have no failover-group.
-    - Configure two Heartbeat I/F
+    - Confgure two Heartbeat I/F
 
 
 #### Add the failover-group for controlling iSCSI Target service.
@@ -115,7 +186,7 @@ On the client PC,
 - Set
 	- [Mount Point] as [/mnt]
 	- [Data Partition Device Name] as [ /dev/sdb2 ]
-	- [Cluster Partition Device Name] as [ /dev/sdb1 ]
+	- [Clsuter Partition Device Name] as [ /dev/sdb1 ]
 - [Finish]
 
 #### Add the execute resource for controlling target service
