@@ -53,18 +53,42 @@ info@expresscluster.jp.nec.com
 
 ## Overview
 
-The general procedure to deploy MYSQL Server with EXPRESSCLUSTER X on two
-server machines (Primary and Standby
+The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Primary and Standby) for high availability of UC VMs consists of the following major steps:
 
+1. Perform system planning to determine requirements and specify specific configuration settings prior to start of actual system installation and configuration.
+2. Set up Primary and Standby ESXi.
+3. Set up Primary and Standby VMs, then set up iSCSI Target Cluster on them.
+4. Configure iSCSI Initiator on both ESXi and connect them to the iSCSI Target.
+5. Deploy Primary and Standby vMA, then set up vMA Cluster on them.
+6. Deploy UC VMs on ESXi and configure vMA Cluster.
+    
 ----
 
 ## System Requirements and Planning
-describes the overall system requirements including a set of tables for planning the installation and configuration of EXPRESSCLUSTER.
 
+<!--
 ### Physical Servers
-- 3 LAN ports (iSCSI, ECX data-mirroring, management)
 
-### Versions used on the validation
+- 2 PC Servers for ESXi
+
+  - recommended number of CPU Cores for each
+    
+	(Cores for VMkernel) + (Cores required for UC VMs) + (2 Cores for iSCSI) + (1 Core for vMA)
+
+  - recommended amount of Memory for each
+
+	(amount for VMkernel) + (required amount for UC VMs) + (2GB for iSCSI) + (600MB for vMA)
+
+  - recommended number of LAN Ports for each 
+
+	3 or more LAN ports (iSCSI, ECX data-mirroring, Management)
+
+  - recommended amount of storage
+
+	(amount for ESXi system) + (required amount for UC VMs) + (16GB for iSCSI VM) + (3GB for vMA VM)
+-->
+
+### Product Versions
 - VMware vSphere Hypervisor 6.0 (VMware ESXi 6.0)
 - Red Hat Enterprise Linux 7.2 x86_64
 - EXPRESSCLUSTER X for Linux 3.3.3-1
@@ -72,51 +96,45 @@ describes the overall system requirements including a set of tables for planning
 ### Network configuration example
 ![Netowrk configuraiton](HAUC-NW-Configuration.jpg)
 
-### Nodes configuration example
-
-iSCSI Target Cluster
-
-|			| Primary		| Secondary		| FIP
-|---			|---			|---			|---
-| Hostname		| iscsi11		| iscsi2		|
-| root password		|			|			|
-|			|			|			|
-| IP Address for iSCSI	| 192.168.0.11/24	| 192.168.0.12/24	| 192.168.0.10
-| IP Address for mirror	| 192.168.1.11/24	| 192.168.1.12/24	|
-| IP Address for manage	| 10.0.0.11/24  	| 10.0.0.12/24  	|
+### VM spec for iSCSI Target Cluster Node
+|||
+|---      |---          |
+| vCPU    | 2 or more   | 
+| Network | 3 ports     |
+| Memory  | 2GB or more |
+| vHDD    | 16GB for system + required amount for UC VMs<br>(recommendation is 500GB or less) |
 
 
-ESXi hosts
+### Hosts configuration example
 
-|				| Primary	| Secondary	|
+| ESXi				| Primary	| Secondary	|
 |---				|---		|---		|
 | Hostname			| esxi1		| esxi2		|
-| root password			| passwd1	| passwd2	|
+| root password			| passwd	| passwd	|
 |				|		|		|
 | IP Address for Management	| 10.0.0.1	| 10.0.0.2	|
-|				|		|		|
-| VMkernel for iSCSI Initiator	| 192.168.0.1	| 192.168.0.2	|
+| IP address for VMkernel1 (iSCSI Initiator)	| 192.168.0.1	| 192.168.0.2	|
 | WWN of iSCSI Initiator	| iqn.1998-01.com.vmware:1	| iqn.1998-01.com.vmware:2	|
 
 
-| Role of the node		 | Host name | IP address			|
-|--------------------------------|-----------|----------------------------------|
-| Primary iSCSI Target Node	 | iscsi1    | 192.168.0.11/24, 192.168.1.11/24	|
-| Secondary iSCSI Target Node	 | iscsi2    | 192.168.0.12/24, 192.168.1.12/24	|
-| Primarry ESXi			 | esxi1     | 192.168.0.1/24 , 10.0.0.1/24	|
-| Secondary ESXi                 | esxi2     | 192.168.0.2/24 , 10.0.0.2/24	|
+| iSCSI Target Cluster		| Primary		| Secondary		|
+|---				|---			|---			|
+| Hostname			| iscsi1		| iscsi2		|
+| root password			| passwd		| passwd		|
+|				|			|			|
+| IP Address for Public (iSCSI)	| 192.168.0.11/24	| 192.168.0.12/24	| 
+| FIP for iSCSI Target		| 192.168.0.10		| 192.168.0.10		|
+| IP Address for Mirroring	| 192.168.1.11/24	| 192.168.1.12/24	|
+| IP Address for Management	| 10.0.0.11/24  	| 10.0.0.12/24  	|
+|||
+| MD - Cluster Partition	| /dev/sdb1		| <-- |
+| MD - Data Partition		| /dev/sdb2		| <-- |
+| WWN of iSCSI Target		| iqn.2016-10.com.ec:1	| <-- |
 
-
-## Parameters example
-
-| Cluster Resources	   | Value			   |
-|--------------------------|-------------------------------|
-| FIP for iSCSI Target     | 192.168.0.10		   |
-| Cluster Partition	   | /dev/sdb1			   |
-| Data Partition	   | /dev/sdb2			   |
-| WWN of iSCSI Target	   | iqn.2016-10.com.ec:1          |
-| WWN of iSCSI Initiator 1 | iqn.1998-01.com.vmware:1      |
-| WWN of iSCSI Initiator 2 | iqn.1998-01.com.vmware:2      |
+| vMA Cluster	| Primary	| Secondary	|
+|---		| ---		| ---		|
+| Hostname	| vma1		| vma2		|
+| IP Address	| 10.0.0.21	| 10.0.0.22	|
 
 ----
 
