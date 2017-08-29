@@ -1,4 +1,14 @@
-.
+<!--
+TBD
+
+★	UC OVA の下記ケースに対する EC 側の構成変更をサポートすること。
+		初期インストール
+		追加(他のアプリケーションを追加)(後からUCAを追加)
+		Upgrade(9500をversion up)
+			(削除→追加)
+
+-->
+
 # EXPRESSCLUSTER Quick Start Guide for vSphere ESXi Host Clustering with iSCSI Target Clustering
 
 --------
@@ -11,9 +21,9 @@ The contents of this document are subject to change without notice. NEC Corporat
 
 ## About this Guide
 
-This guide provides a hands-on "Quick Start" set of instructions for the
-EXPRESSCLUSTER X for Linux. The guide assumes its readers to have Linux system administration knowledge and skills with experience in installation and configuration of CentOS or Red Hat Enterprise Linux operating systems, Storages, and Networks. The guide includes step-by-step instructions to install and configure EXPRESSCLUSTER X with iSCSI Target, vSphere Management Assistant (vMA) and vSphere ESXi.
+This guide provides a hands-on "Quick Start" set of instructions for the EXPRESSCLUSTER X for Linux. The guide assumes its readers to have Linux system administration knowledge and skills with experience in installation and configuration of CentOS or Red Hat Enterprise Linux operating systems, Storages, and Networks. The guide includes step-by-step instructions to install and configure EXPRESSCLUSTER X with iSCSI Target, vSphere Management Assistant (vMA) and vSphere ESXi.
 
+<!-- 
 This guide covers the following topics:
 
 Chapter 1: Overview - describes the general steps of setup procedure.
@@ -23,12 +33,12 @@ Chapter 2: System Requirements and Planning - describes the overall system requi
 Chapter 3: Setup Procedure - describes the configurations required for ESXi Host Clustering.
 
 Chapter 4: Common Maintenance Tasks - describes how to perform common maintenance tasks.
+-->
 
 ----
 
 ## Where to go for more information
 
-Refer to additional documentation under the "documentation" directory on the EXPRESSCLUSTER X distribution CD or archive file.
 For any further information, please visit the EXPRESSCLUSTER web-site at
 
 http://www.nec.com/expresscluster
@@ -41,13 +51,15 @@ The following guides are available for instant support:
 
 - Reference Guide - This is a reference of commands that can be put in EXPRESSCLUSTER scripts and maintenance commands that can be executed from the server command prompt.
 
-The guides stated in above can also be found at:
+The guides stated in above can be found at:
 
 http://www.nec.com/global/prod/expresscluster/en/support/manuals.html
 
+<!--
 The EXPRESSCLUSTER team can also be contacted via the following E-mail address:
 
 info@expresscluster.jp.nec.com
+-->
 
 ----
 
@@ -668,7 +680,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 <!-- TBD -->
 
-
+----
 
 ## Common Maintenance Tasks
 
@@ -683,7 +695,15 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 - genw-remote-node in vMA Cluster periodically executes "power on" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally shutdown the vMA VM
 - genw-remote-node in vMA Cluster periodically executes "starting cluster service" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally stop the cluster service.
 
+### Adding / Deleting UC VM on vMA Cluster
 
+#### Adding VM
+<!-- TBD -->
+
+#### Deleting VM
+<!-- TBD -->
+
+----
 
 ## Revision history
 
