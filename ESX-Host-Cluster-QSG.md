@@ -128,7 +128,7 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 | IP Address for Management	| 10.0.0.1		| 10.0.0.2		|
 | IP address for VMkernel1(*) 	| 192.168.0.1		| 192.168.0.2		|
 | iSCSI Initiator WWN		| iqn.1998-01.com.vmware:1 | iqn.1998-01.com.vmware:2 |
-|				|			|			|
+|||
 | **iSCSI Target Cluster**	| **Primary**		| **Seconadry**	|
 | Hostname			| iscsi1		| iscsi2		|
 | root password			| passwd		| passwd		|
@@ -142,10 +142,11 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 | MD - Data Partition		| /dev/sdb2		| <-- |
 | WWN of iSCSI Target		| iqn.2016-10.com.ec:1	| <-- |
 ||||
-| **vMA Cluster**		| **Primary**	| **Seconadry**	|
-| Hostname			| vma1		| vma2			|
-| vi-admin password		| passwd	| passwd		|
-| IP Address			| 10.0.0.21	| 10.0.0.22		|
+| **vMA Cluster**		| **Primary**		| **Seconadry**	|
+| Hostname			| vma1			| vma2			|
+| vi-admin password		| passwd		| passwd		|
+|				|			|			|
+| IP Address			| 10.0.0.21		| 10.0.0.22		|
 
 (*) for iSCSI Initiator
 
@@ -202,13 +203,12 @@ On both iSCSI Target VMs,
 
 On the client PC,
 
-- Open EXPRESSCLUSTER Builder ( http://10.0.0.11:29003/ )
+- Open Cluster Manager ( http://10.0.0.11:29003/ )
+- Change to [Operation Mode] from [Config Mode]
 - Configure the cluster *iSCSI-Cluster* which have no failover-group.
     - Configure two Heartbeat I/F
-      - 192.168.0.11 , 192.168.1.11 for iscsi1
-      - 192.168.0.12 , 192.168.1.12 for iscsi2
-      - 192.168.0.11 , 192.168.0.12 for heartbeat and mirroring
-
+      - 192.168.0.11 , 192.168.O.12 for primary interconnect
+      - 192.168.1.11 , 192.168.1.12 for secondary interconnect and mirror connect
 
 #### Adding the failover-group for controlling iSCSI Target service.
 - Right click [Groups] in left pane > [Add Group]
@@ -260,7 +260,8 @@ On the client PC,
 - Click [Finish]
 
 #### Adding the execute resource for automatic MD recovery
-This resource is used for the **special case**
+
+This resource is enabling more automated MD recovery by supposing the node which the failover group trying to start has latest data than the other node.
 
 - Right click [failover-iscsi] in left pane > [Add Resource]
 - Select [Type] as [execute resource], set [Name] as [*exec-md-recovery*] then click [Next]
@@ -612,14 +613,14 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
   - [Info] section
     - select [ip monitor] as [type] > input *ipw-VMn* > [Next]
   - [Monitor (common)] section
-    - input *600* as [Wait Time ot Start Monitoring]
+    - input *600* as [Wait Time to Start Monitoring]
     - select [Active] as [Monitor Timing]
     - [Browse] button
       - [exec-VMn] > [OK]
     - [Next]
   - [Monitor (special)] section
     - [Add]
-      - input IP address of VMn (e.g. 10.0.0.100)  
+      - input IP address of VMn (e.g. 10.0.0.101)  
         **[ Note ]**  Adding NIC on vma1 and vma2 is required if the VMn belongs to the defferent network than vma1 and vma2.
 	Configure the IP address for the additional NIC to have the same network address with VMn.  
 		/etc/sysconfig/networking/devices/ifcfg-eth1  
@@ -695,13 +696,48 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 - genw-remote-node in vMA Cluster periodically executes "power on" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally shutdown the vMA VM
 - genw-remote-node in vMA Cluster periodically executes "starting cluster service" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally stop the cluster service.
 
-### Adding / Deleting UC VM on vMA Cluster
+### Deleting / Adding UC VM on vMA Cluster
 
-#### Adding VM
-<!-- TBD -->
+Operation flow of "Deleting UC VM" then "Adding UC VM" can be used for version up operation for UC VM.
 
 #### Deleting VM
-<!-- TBD -->
+- Open Cluster Manager for vMA Cluster ( http://10.0.0.21:29003/ )
+- Change to [Config Mode] from [Operation Mode]
+- In left pane, click [failover-VMn] to be deleted 
+- In right pane, right click [exec-VMn] > [Remove Resource] > [Yes]
+- In left pane, right click [failover-VMn] > [Remove Group] > [Yes]
+- [File] menu > [Apply the Configuration File]
+
+#### Adding VM
+- Open Cluster Manager for vMA Cluster ( http://10.0.0.21:29003/ )
+- Change to [Config Mode] from [Operation Mode]
+- Right click [Groups] in left pane > [Add Group]
+- Basic Settings : Set [Name] as [*failover-VMn*]  > [Next]
+- Startup Servers : [Next]
+- Group Attributes : [Next]
+- Group Resources : [Add]	
+  - Info : Select [execute resource] as [Type] > input *exec-VMn* as [Name] > [Next]
+  - Dependency : [Next]
+  - Recovery Operation : Select [Stop the cluster service and regoot OS] as [Final Action] in [Recovery Operation at Deactivation Failure Detection] > [Next]
+  - Details : Select [start.sh] > [Replace] > Select *vm-start.pl* >
+    - [Edit] > followings need to be specified in the script.
+      - the path to the VM configuration file (.vmx) as *@cfg_paths*.  
+        it can be obtaind at vMA console like below.
+
+      			$ sudo bash
+      			# vmware-cmd --server 10.0.0.1 -U root -l 
+    		
+    			/vmfs/volumes/588b1739-87411a6f-618f-002421a9b4be/vm1/vm1.vmx
+
+      - Datastore name as *$datastore* which the VM to be protected is stored.
+      - IP addresses for VMkernel Port for both ESXi as *$vmk1* and *$vmk2* which is accessible from the vMA Cluster nodes.
+      - IP addresses for the Cluster nodes as *$vma1* and *$vma2* which is used for accessing to VMkernel Port.
+  - Select [stop.sh]  > [Replace] > Select *vm-stop.pl* >
+    - [Edit] > the same with *start.sh* need to be specified.
+    - [Tuning] > [Maintenance] tab > Input */opt/nec/clusterpro/log/exec-VMn.log* as [Log Outpu Path] > Check [Rotate Log] > [OK]
+  - [Finish]
+- [Finish]
+- [File] menu > [Apply the Configuration File]
 
 ----
 

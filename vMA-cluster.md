@@ -280,14 +280,14 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
   - [Info] section
     - select [ip monitor] as [type] > input *ipw-VMn* > [Next]
   - [Monitor (common)] section
-    - input *600* as [Wait Time ot Start Monitoring]
+    - input *600* as [Wait Time to Start Monitoring]
     - select [Active] as [Monitor Timing]
     - [Browse] button
       - [exec-VMn] > [OK]
     - [Next]
   - [Monitor (special)] section
     - [Add]
-      - input IP address of VMn (e.g. 10.0.0.100)  
+      - input IP address of VMn (e.g. 10.0.0.101)  
         **[ Note ]**  Adding NIC on vma1 and vma2 is required if the VMn belongs to the defferent network than vma1 and vma2.
 	Configure the IP address for the additional NIC to have the same network address with VMn.  
 		/etc/sysconfig/networking/devices/ifcfg-eth1  
