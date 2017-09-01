@@ -1,13 +1,3 @@
-<!--
-TBD
-
-★	UC OVA の下記ケースに対する EC 側の構成変更をサポートすること。
-		初期インストール
-		追加(他のアプリケーションを追加)(後からUCAを追加)
-		Upgrade(9500をversion up)
-			(削除→追加)
-
--->
 
 # EXPRESSCLUSTER Quick Start Guide for vSphere ESXi Host Clustering with iSCSI Target Clustering
 
@@ -107,7 +97,7 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 - EXPRESSCLUSTER X for Linux 3.3.3-1
 
 ### Network configuration example
-![Netowrk configuraiton](HAUC-NW-Configuration.jpg)
+![Network configuraiton](HAUC-NW-Configuration.jpg)
 
 ### VM spec for iSCSI Target Cluster
 |||
@@ -129,7 +119,7 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 | IP address for VMkernel1(*) 	| 192.168.0.1		| 192.168.0.2		|
 | iSCSI Initiator WWN		| iqn.1998-01.com.vmware:1 | iqn.1998-01.com.vmware:2 |
 |||
-| **iSCSI Target Cluster**	| **Primary**		| **Seconadry**	|
+| **iSCSI Target Cluster**	| **Primary**		| **Secondary**	|
 | Hostname			| iscsi1		| iscsi2		|
 | root password			| passwd		| passwd		|
 |				|			|			|
@@ -142,7 +132,7 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 | MD - Data Partition		| /dev/sdb2		| <-- |
 | WWN of iSCSI Target		| iqn.2016-10.com.ec:1	| <-- |
 ||||
-| **vMA Cluster**		| **Primary**		| **Seconadry**	|
+| **vMA Cluster**		| **Primary**		| **Secondary**	|
 | Hostname			| vma1			| vma2			|
 | vi-admin password		| passwd		| passwd		|
 |				|			|			|
@@ -287,7 +277,7 @@ This resource is enabling more automated MD recovery by supposing the node which
   - [Monitor (special)] section
     - [Replace]
       - select *genw-md.pl* > [Open] > [Yes]
-    - input */opt/nec/clusterpro/log/genw-md.log* as [Log Output Paht] > check [Rotate Log]
+    - input */opt/nec/clusterpro/log/genw-md.log* as [Log Output Path] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
     - select [Execute only the final action] as [Recovery Action]
@@ -315,7 +305,7 @@ This resource is enabling more automated MD recovery by supposing the node which
       - write $VMIP2 as IP address for iscsi2
       - write $VMK1 as IP address for esxi1 which accessible from iscsi1
       - write $VMK2 as IP address for esxi2 which accessible from iscsi2
-    - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Paht] > check [Rotate Log]
+    - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Path] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
     - select [Execute only the final action] as [Recovery Action]
@@ -340,7 +330,7 @@ On iscsi1, create fileio backstore and configure it as backstore for the iSCSI T
 
 		> set global auto_save_on_exit=false
 
-- Create fileio backstore (*idisk*) which have required size on mountpoint of the mirror disk
+- Create fileio backstore (*idisk*) which have required size on mount point of the mirror disk
 
 		> cd /backstores/fileio
 		> create idisk /mnt/idisk.img 500G
@@ -396,7 +386,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 - On ESXi-1 and ESXi-2
   - Deploy vMA OVF template on both ESXi and boot them.
-  - Configure the netowrk for ESXi and vMA to make communicatable between vMA and VMkernel port.
+  - Configure the network for ESXi and vMA to make communicable between vMA and VMkernel port.
     - ESXi Example:
 
 		|		| Primary	| Secondary	|
@@ -412,9 +402,9 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 		| 3) Hostname	| vma1		| vma2		| need to be independent hostname ( "localhost" is inappropriate ) |
 		| 6) IP Address	| 10.0.0.21	| 10.0.0.22	| need to be independent and static IP Address |
 
-    The IP address of vma1 and vma2 should be possible to communicate with VMkernel port of both ESXi and VM(s) to be monitored.
+    The IP address of vma1 and vma2 should be possible to communicate with Management IP of both ESXi and UC VM(s) to be protected.
 
-    - VM to be controlled:
+    - Example UC VM to be protected:
 
 		| Hostname	| IP address	|
 		|---		|---		|
@@ -464,14 +454,14 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
         - IP addresses for the Cluster nodes as *$vma1* and *$vma2* which is used for accessing to VMkernel Port.
     - Select [stop.sh]  > [Replace] > Select *vm-stop.pl* >
     - [Edit] > the same with *start.sh* need to be specified.
-    - [Tuning] > [Maintenance] tab > Input */opt/nec/clusterpro/log/exec-VMn.log* as [Log Outpu Path] > Check [Rotate Log] > [OK] > [Finish]
+    - [Tuning] > [Maintenance] tab > Input */opt/nec/clusterpro/log/exec-VMn.log* as [Log Output Path] > Check [Rotate Log] > [OK] > [Finish]
     - [Finish]
     - [Next]
     - [Add] > select [custom monitor] as [Type] > input *genw-VMn* as [Name] > [Next]
-    - select [Active] as [Monitoring Timig] > [Browse] >  
+    - select [Active] as [Monitoring Timing] > [Browse] >  
       select [exec-VMn] > [OK] > [Next]
     - [Replace] > select *genw-vm.pl* >
-    - [Edit] > Parameters in the belows need to be specified in the script.  
+    - [Edit] > Parameters in the bellows need to be specified in the script.  
       (these parameters are the same as start.sh and stop.sh of exec-VMn)
         - The path to the VM configuration file (.vmx) as *@cfg_paths*.  
         - IP addresses for VMkernel Port for both ESXi as *$vmk1* and *$vmk2* which is accessible from the vMA Cluster nodes.
@@ -501,7 +491,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
              		IP1="10.0.0.11"
              		IP2="10.0.0.12"
              
-        - [Tuning] > [Maintenance] tab > Input [*/opt/nec/clusterpro/log/exec-VMn-datastore.log*] as [Log Outpu Path] > Check [Rotate Log] > [OK]
+        - [Tuning] > [Maintenance] tab > Input [*/opt/nec/clusterpro/log/exec-VMn-datastore.log*] as [Log Output Path] > Check [Rotate Log] > [OK]
         - [Finish]
         - Right click [exec-VMn] in right pane > [Properties]
         - [Dependency] tab > Uncheck [Follow the default dependency] > Click [Add] for exec-datastore > [OK]
@@ -580,7 +570,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     - select [custom monitor] as [type] > input *genw-remote-esxi* > [Next]
   - [Monitor (common)] section
     - input *180* as [Interval]
-    - input *60* as [Wait Time ot Start Monitoring]
+    - input *60* as [Wait Time to Start Monitoring]
     - select [Active] as [Monitor Timing]
     - [Browse] button
       - [exec-VMn] > [OK]
@@ -598,7 +588,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
       - write $vma2 as IP address for vma2
       - write $vmhba1 as the name of iSCSI Software Adapter on esxi1
       - write $vmhba2 as the name of iSCSI Software Adapter on esxi2
-    - input */opt/nec/clusterpro/log/genw-esxi.log* as [Log Output Paht] > check [Rotate Log]
+    - input */opt/nec/clusterpro/log/genw-esxi.log* as [Log Output Path] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
     - select [Execute only the final action] as [Recovery Action]
@@ -654,7 +644,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
       - write $VMIP2 as IP address for vma2
       - write $VMK1 as IP address for esxi1
       - write $VMK2 as IP address for esxi2
-    - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Paht] > check [Rotate Log]
+    - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Path] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
     - select [Execute only the final action] as [Recovery Action]
@@ -673,7 +663,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 <!-- TBD -->
 
-- The network for iSCSI and Data Mirroring should use physically indepenent netowrk if possible. Configure logically independent at least.
+- The network for iSCSI and Data Mirroring should use physically indepenent network if possible. Configure logically independent at least.
 
 <!-- TBD -->
 
@@ -722,7 +712,7 @@ Operation flow of "Deleting UC VM" then "Adding UC VM" can be used for version u
   - Details : Select [start.sh] > [Replace] > Select *vm-start.pl* >
     - [Edit] > followings need to be specified in the script.
       - the path to the VM configuration file (.vmx) as *@cfg_paths*.  
-        it can be obtaind at vMA console like below.
+        it can be obtained at vMA console like below.
 
       			$ sudo bash
       			# vmware-cmd --server 10.0.0.1 -U root -l 
@@ -734,7 +724,7 @@ Operation flow of "Deleting UC VM" then "Adding UC VM" can be used for version u
       - IP addresses for the Cluster nodes as *$vma1* and *$vma2* which is used for accessing to VMkernel Port.
   - Select [stop.sh]  > [Replace] > Select *vm-stop.pl* >
     - [Edit] > the same with *start.sh* need to be specified.
-    - [Tuning] > [Maintenance] tab > Input */opt/nec/clusterpro/log/exec-VMn.log* as [Log Outpu Path] > Check [Rotate Log] > [OK]
+    - [Tuning] > [Maintenance] tab > Input */opt/nec/clusterpro/log/exec-VMn.log* as [Log Output Path] > Check [Rotate Log] > [OK]
   - [Finish]
 - [Finish]
 - [File] menu > [Apply the Configuration File]
