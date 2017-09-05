@@ -3,38 +3,30 @@
 # Script for power on the Virtual Machine
 #
 use strict;
-##use FindBin;
 #-------------------------------------------------------------------------------
 # Configuration
 #-------------------------------------------------------------------------------
 # The path to VM configuration file. This must be absolute UUID-based path.
 # like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
-our @cfg_paths = (
+my @cfg_paths = (
 #'/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/vm1/vm1.vmx'
 '/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/cent7/cent7.vmx'
 );
 
+# The HBA name to connect to iSCSI Datastore.
+my $vmhba = "vmhba33";
+
 # The Datastore name which the VM is stored.
-our $datastore = "iSCSI";
+my $datastore = "iSCSI";
 
 # IP addresses of VMkernel port.
-our $vmk1 = "10.0.0.1";
-our $vmk2 = "10.0.0.2";
+my $vmk1 = "10.0.0.1";
+my $vmk2 = "10.0.0.2";
 
 # IP addresses of vMA VMs
-our $vma1 = "10.0.0.21";
-our $vma2 = "10.0.0.22";
+my $vma1 = "10.0.0.21";
+my $vma2 = "10.0.0.22";
 
-#-------------------------------------------------------------------------------
-# If using vmconf.pl as configuration file, comment out the above configuration
-# and comment in the below configuraiton.
-##our @cfg_paths = ();
-##our $datastore = "";
-##our $vmk1 = "";
-##our $vmk2 = "";
-##our $vma1 = "";
-##our $vma2 = "";
-##require($FindBin::Bin . "/vmconf.pl");
 #-------------------------------------------------------------------------------
 # The interval to check the storage status. (second)
 my $storage_check_interval = 3;
@@ -49,6 +41,7 @@ my $start_to = 10;
 my $vmk = "";
 my $cfg_path = "";
 my $vmname = "";
+my @lines = ();
 
 # VM execution state map
 my %state = (
@@ -110,33 +103,27 @@ exit $r;
 #-------------------------------------------------------------------------------
 sub IsStorageReady{
 	my $device = "";
-	my $cmd = "esxcli -s $vmk -u root storage vmfs extent list";
-	&Log("[D][IsStorageReady] executing [$cmd]\n");
-	open(IN, $cmd . "|") or die "[E][IsStorageReady] esxcli failed to execute : [$!]";
-	while(<IN>){
+	&execution("esxcli -s $vmk -u root storage vmfs extent list");
+	foreach (@lines) {
 		chomp;
-		&Log("[D][IsStorageReady] \t[$_]\n");
+		&Log("[D][IsStorageReady] $_\n");
 		if(/^$datastore\s+(.+?\s+){2}(.+?)\s.*/){
 			$device = $2;
 			&Log("[D][IsStorageReady] \tdatastore [$datastore] = device [$device]\n");
 			last;
 		}
 	}
-	close(IN) or &Log( $! ? "[E][IsStorageReady]\tclose failed ![$!]\n"
-			      : "[E][IsStorageReady]\tcmd exit non-zero ?[$?]\n" );
-	&Log(sprintf("[E][IsstorageReady] \t![%d] ?[%d]\n", $!, $?));
 	if($device eq ""){
 		&Log("[E][IsStorageReady] \tdatastore [$datastore] not found\n");
+		&execution("esxcli -s $vmk -u root storage core adapter rescan --adapter $vmhba");
 		return 0;
 	}
 
 	my $ret = -1;
-	$cmd = "esxcli -s $vmk -u root storage core path list -d $device";
-	&Log("[D][IsStorageReady] executing [$cmd]\n");
-	open(IN, $cmd . "|") or die "[E][IsStorageReady] esxcli failed to execute.";
-	while(<IN>){
+	&execution("esxcli -s $vmk -u root storage core path list -d $device");
+	foreach (@lines) {
+		chomp;
 		if(/   State: (.*)$/){
-			chomp;
 			&Log("[D][IsStorageReady] \t[$_]\n");
 			if($1 eq "active"){
 				$ret = 1;
@@ -146,9 +133,6 @@ sub IsStorageReady{
 			last;
 		}
 	}
-	close(IN) or &Log( $! ? "[E][IsStorageReady]\tclose failed ![$!]\n"
-			      : "[E][IsStorageReady]\tcmd exit non-zero ?[$?]\n" );
-	&Log(sprintf("[E][IsstorageReady] \t![%d] ?[%d]\n", $!, $?));
 	if($ret == -1){
 		&Log("[E][IsStorageReady] datastore state for [$datastore] not found\n");
 		return 1;
@@ -164,9 +148,8 @@ sub RegisterVm{
 
 	# Checking inventory
 	################################
-	&Log("[D][RegisterVm] executing [$vmcmd_list]\n");
-	open(my $h, $vmcmd_list . " 2>&1 |") or die "[E][RegisterVm] execution failed [$!]";
-	foreach (<$h>){
+	&execution($vmcmd_list);
+	foreach(@lines){
 		chomp;
 		&Log("[D][RegisterVm]\t[$_]\n");
 		if ($cfg_path eq $_){
@@ -174,26 +157,19 @@ sub RegisterVm{
 			$ret = 0;
 		}
 	}
-	close($h) or &Log( $! ? "[E][RegisterVm]\tclose failed ![$!]\n"
-			      : "[E][RegisterVm]\tcmd exit non-zero ?[$?]\n" );
-	&Log(sprintf("[E][RegisterVm]\t![%d] ?[%d]\n", $!, $?));
 	return 0 if ($ret == 0);
 
 	# Registering VM
 	################################
 	my $cmd = "ssh -i ~/.ssh/id_rsa $vmk \"vim-cmd solo/registervm \'$cfg_path\' 2>&1\"";
-	&Log("[D][RegisterVm] executing [$cmd]\n");
-	open($h, "$cmd |") or die "[E][RegisterVm] execution [$cmd] failed [$!]";
-	while(<$h>){
+	&execution($cmd);
+	foreach(@lines){
 		chomp;
 		&Log("[D][RegisterVm] \t[$_]\n");
 		if (/msg = \"The specified key, name, or identifier '(\d+)' already exists.\"/) {
 			$vmid = $1;
 		}
 	}
-	close($h) or &Log( $! ? "[E][RegisterVm]\tclose failed ![$!]\n"
-			      : "[E][RegisterVm]\tcmd exit non-zero ?[$?]\n" );
-	&Log(sprintf("[E][RegisterVm]\t![%d] ?[%d]\n", $!, $?));
 	if ($vmid eq "") {
 		&Log("[I][RegisterVm] [$vmname] at [$vmk] registered\n");
 		return 0;
@@ -203,36 +179,30 @@ sub RegisterVm{
 	# Unregistering the invalid VM.
 	################################
 	$cmd = "ssh -i ~/.ssh/id_rsa $vmk \'vim-cmd vmsvc/unregister $vmid\'";
-	&Log("[D][RegisterVm] executing [$cmd]\n");
-	open($h, "$cmd |") or die "[E][RegisterVm] execution [$cmd] failed [$!]";
-	while(<$h>){
+	&execution($cmd);
+	foreach(@lines){
+		chomp;
 		&Log("[D][RegisterVm]\t[$_]\n");
 	}
-	close($h) or &Log( $! ? "[E][RegisterVm]\tclose failed ![$!]\n"
-			      : "[E][RegisterVm]\tcmd exit non-zero ?[$?]\n" );
-	&Log(sprintf("[E][RegisterVm]\t![%d] ?[%d]\n", $!, $?));
 
 	# Retrying to register VM
 	################################
 	#$cmd = "$vmcmd $svop \'$cfg_path\' 2>&1";
 	$vmid = "";
 	$cmd = "ssh -i ~/.ssh/id_rsa $vmk \"vim-cmd solo/registervm \'$cfg_path\' 2>&1\"";
-	&Log("[D][RegisterVm] executing [$cmd]\n");
-	open($h, "$cmd |") or die "[E][RegisterVm] execution [$cmd] failed [$!]";
-	while(<$h>){
+	&execution($cmd);
+	foreach(@lines){
 		chomp;
 		if(/^(\d+?)$/){
 			$vmid = $1;
 		}
 		&Log("[D][RegisterVm] \t[" . $_ ."]\n");
 	}
-	if(!close($h)){
-		&Log( $! ? "[E][RegisterVm]\tclose failed ![$!]\n"
-			 : "[E][RegisterVm]\tcmd exit non-zero ?[$?]\n" );
+	if($vmid eq ""){
 		&Log("[E][RegisterVm] [$vmname] at [$vmk] failed to regiester\n");
 		return 1;
 	}
-	&Log(sprintf("[I][RegisterVm]\t![%d] ?[%d] [$vmname][$vmid] at [$vmk] registered\n", $!, $?));
+	&Log(sprintf("[I][RegisterVm]\t[$vmname][$vmid] at [$vmk] registered\n"));
 	return 0;
 }
 #-------------------------------------------------------------------------------
@@ -348,6 +318,16 @@ sub WaitPoweredOnDone{
 	}
 	&Log("[E] [$vmname] at [$vmk]: Not powered on done. ($max_cnt)\n");
 	return 0;
+}
+#-------------------------------------------------------------------------------
+sub execution {
+	my $cmd = shift;
+	&Log("[D] executing [$cmd]\n");
+	open(my $h, "$cmd 2>&1 |") or die "[E] execution [$cmd] failed [$!]";
+	@lines = <$h>;
+	close($h); 
+	&Log(sprintf("[D] result ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
+	return $?;
 }
 #-------------------------------------------------------------------------------
 sub Log{
