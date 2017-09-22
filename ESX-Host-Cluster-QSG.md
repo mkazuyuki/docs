@@ -382,7 +382,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 ### Setting up vMA Cluster
 
-#### Configuring Failover Group
+#### Configuring vMA
 
 - On ESXi-1 and ESXi-2
   - Deploy vMA OVF template on both ESXi and boot them.
@@ -399,8 +399,8 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 		|		| Primary	| Secondary	| Note	|
 		|---		|---		|---		|---	|
-		| 3) Hostname	| vma1		| vma2		| need to be independent hostname ( "localhost" is inappropriate ) |
-		| 6) IP Address	| 10.0.0.21	| 10.0.0.22	| need to be independent and static IP Address |
+		| 3) Hostname	| vma1		| vma2		| need to be unique hostname ( "localhost" is inappropriate ) |
+		| 6) IP Address	| 10.0.0.21	| 10.0.0.22	| need to be unique and static IP Address |
 
     The IP address of vma1 and vma2 should be possible to communicate with Management IP of both ESXi and UC VM(s) to be protected.
 
@@ -411,8 +411,46 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 		| vm1   	| 10.0.0.101	|
 
 
-- On vma1 and vma2 
+#### Configuring credentials for accessing ESXi from vMA
 
+- On the console of both node (vma1, vma2)  
+    Register root password of both ESXi to enable vmware-cmd and esxcli command accessing ESXi without password.
+
+    	> sudo bash
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -u root -p 'passwd1'
+    	New entry added successfully
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.2 -u root -p 'passwd2'
+    	New entry added successfully
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl list
+    		Server	user Name
+    		10.0.0.1	root
+    		10.0.0.2	root
+    		
+    		Server 	Thumbprint
+    	# exit
+    	>
+    
+- on vma1 console,
+    setup ESXi thumbprint to use esxcli command
+
+    	$ sudo bash
+    	# esxcli -s 10.0.0.1 -u root vm process list
+    	Connect to 10.0.0.1 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
+    	New entry added successfully
+
+- on vma2 console,
+    setup ESXi thumbprint to use esxcli command
+
+    	$ sudo bash
+    	# esxcli -s 10.0.0.2 -u root vm process list
+    	Connect to 10.0.0.2 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.2 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
+    	New entry added successfully
+
+#### Configuring Failover Cluster
+
+- On vma1 and vma2 console
   - Put ECX rpm file and its license file by using scp command and so on.
   - Install ECX
 
@@ -464,8 +502,8 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     - [Edit] > Parameters in the bellows need to be specified in the script.  
       (these parameters are the same as start.sh and stop.sh of exec-VMn)
         - The path to the VM configuration file (.vmx) as *@cfg_paths*.  
-        - IP addresses for VMkernel Port for both ESXi as *$vmk1* and *$vmk2* which is accessible from the vMA Cluster nodes.
-        - IP addresses for the Cluster nodes as *$vma1* and *$vma2* which is used for accessing to VMkernel Port.
+        - IP addresses of the VMkernel Port for both ESXi as *$vmk1* and *$vmk2* which is accessible from the vMA Cluster nodes.
+        - IP addresses of the vMA Cluster nodes as *$vma1* and *$vma2* which is used for accessing to VMkernel Port.
     - input */opt/nec/clusterpro/log/genw-VMn.log* as [Log Output Path] >  
       Check [Rotate Log] > [Next]
     - select [Executing failover to the recovery target] > [Browse] >  
@@ -497,41 +535,6 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
         - [Dependency] tab > Uncheck [Follow the default dependency] > Click [Add] for exec-datastore > [OK]
         - [File] menu > [Apply the Configuration File]
         ----
-
-  - on the console of both node (vma1, vma2)  
-    Register root password of both ESXi to enable vmware-cmd and esxcli command accessing ESXi without password.
-
-    	> sudo bash
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -u root -p passwd1
-    		New entry added successfully
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.2 -u root -p passwd2
-    	New entry added successfully
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl list
-    		Server	user Name
-    		10.0.0.1	root
-    		10.0.0.2	root
-    		
-    		Server 	Thumbprint
-    	# exit
-    	>
-    
-  - on vma1 console
-    setup ESXi thumbprint to use esxcli command
-
-    	$ sudo bash
-    	# esxcli -s 10.0.0.1 -u root vm process list
-    	Connect to 10.0.0.1 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
-    	New entry added successfully
-
-  - on vma2 console
-    setup ESXi thumbprint to use esxcli command
-
-    	$ sudo bash
-    	# esxcli -s 10.0.0.2 -u root vm process list
-    	Connect to 10.0.0.2 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.2 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
-    	New entry added successfully
 
   - on Cluster Manager
 
@@ -655,8 +658,6 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 #### Applying the configuration
     - [File] menu > [Apply the Configuration File]
-
-
 
 ### Setting up ESXi - VM automatic boot, Network
 - Configure both ESXi to automatically boot all the nodes in vMA Cluster (vma1, vma2) and iSCSI Target Cluster (iscsi1, iscsi2) when ESXi starts.

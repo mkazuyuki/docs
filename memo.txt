@@ -1,0 +1,21 @@
+--------
+★	root login が lock down されると、after.local が 
+
+		esxcli --server $vmk storage filesystem list | cut -d' ' -f3 | grep $DatastoreName
+
+	で無限ループする。
+	VMの起動スクリプトで 無効なVMを消したり、ストレージとの接続確認を行うようにしたから、
+	after.local が要らなくなっている可能性があるので、確認すること。
+
+->	after.local がやっていること
+		- invalid VM の削除
+		- iSCSI Datastore に入っていて、かつ、ESXi に登録されている VM の電源断、登録削除
+
+	stop.sh (vm-start.pl) がやっていること
+		- iSCSI Datastore が見つからなければ、vmhba をリスキャンして iSCSI接続を促す
+		- invalid VM の削除は登録処理が失敗した場合に行う。
+
+
+	vMA VM が panic > bootする時などに after.logcal が「走っている最中の VM を止めてしまうケース」がありそう。
+
+** after.local 消そう! ** 

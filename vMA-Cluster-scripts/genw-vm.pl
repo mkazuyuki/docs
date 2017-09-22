@@ -3,32 +3,25 @@
 # Script for monitoring the Virtual Machine
 #
 use strict;
-use FindBin;
+
 #-------------------------------------------------------------------------------
 # Configuration
 #-------------------------------------------------------------------------------
 # The path to VM configuration file. This must be absolute UUID-based path.
 # like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
-our @cfg_paths = (
-"/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/cent7/cent7.vmx"
+my @cfg_paths = (
+'/vmfs/volumes/58a7297f-5d0c41f3-b7a5-000c2964975f/cent7/cent7.vmx'
 );
 
 # IP addresses of VMkernel port.
-our $vmk1 = "10.0.0.1";
-our $vmk2 = "10.0.0.2";
+my $vmk1 = "10.0.0.1";
+my $vmk2 = "10.0.0.2";
 
 # IP addresses of vMA VMs
-our $vma1 = "10.0.0.21";
-our $vma2 = "10.0.0.22";
+my $vma1 = "10.0.0.21";
+my $vma2 = "10.0.0.22";
 
 #-------------------------------------------------------------------------------
-# The interval to check the vm status. (second)
-my $interval = 1;
-#-------------------------------------------------------------------------------
-#our $cfg_path = "";
-#require($FindBin::Bin . "/vmconf.pl");
-
-# VM operation command path
 my $vmk = "";
 my $tmp = `ip address | grep $vma1`;
 if ($? == 0) {
@@ -44,16 +37,8 @@ if ($? == 0) {
 }
 my $vmcmd = "/usr/bin/vmware-cmd --server $vmk --username root";
 $ENV{"HOME"} = "/root";
-#&Log("[I] [/usr/bin/vmware-cmd --server $vmk --username root][" . $ENV{"HOME"} ."]\n");
+#&Log("[I] [$vmcmd][" . $ENV{"HOME"} ."]\n");
 
-# VM execution state map
-my %state = (
-		"VM_EXECUTION_STATE_ON" => "on",
-		"VM_EXECUTION_STATE_OFF" => "off",
-		"VM_EXECUTION_STATE_SUSPENDED" => "suspended",
-		"VM_EXECUTION_STATE_STUCK" => "stuck",
-		"VM_EXECUTION_STATE_UNKNOWN" => "unknown"
-	    );
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
@@ -91,14 +76,23 @@ sub Monitor{
 			$ret = $1;
 		}else{
 			&Log("[E] [$vmname] at [$vmk] Could not get VM heartbeat count: [$line]\n");
+			if ($line =~ /No virtual machine found./){
+				# Issue failover when VMn active on another ESXi
+				return 1;
+			}
 		}
 	}
 	close($fh);
+
+	# vmware-cmd <config_file_path> gettoolslastactive
+	# 0 -- VMware Tools are not installed or not running.
+	# 1 -- Guest operating system is responding normally.
+	# 5 -- Intermittent heartbeat. There might be a problem with the guest operating system.
+	# 100 -- No heartbeat. Guest operating system might have stopped responding
 	if ($ret == 0){
 		&Log("[W] [$vmname]\tVMware Tools are not installed or not running.\n");
 		return 0;
 	} elsif ($ret == 1) {
-		# Guest operating system is responding normally.
 		&Log("[I] [$vmname]\tGuest OS is responding normally.\n");
 		return 0;
 	} elsif ($ret == 5) {

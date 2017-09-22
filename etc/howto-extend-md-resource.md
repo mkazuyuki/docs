@@ -1,5 +1,12 @@
 # How to extend MD resource in the iSCSI Target Cluster running on ESXi
 
+<!--
+
+手順5で resize2fs でfsサイズ拡張後、targetcli で作成した idisk.img のサイズ拡張手順が必要。
+targetcli で行えるのか、vSphere Client (iSCSI Initiator 側)で行うのか? 
+
+-->
+
 ----
 
 [ECX Reference Guide][1] P.1331 "Changing offset or size of a partition on mirror disk resource" describes the method to extend MD resource. However its rough flow is backup, resize, **format** then restore. Yes, this flow includes "format" which you may dislike .
