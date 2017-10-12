@@ -18,4 +18,8 @@
 
 	vMA VM が panic > bootする時などに after.logcal が「走っている最中の VM を止めてしまうケース」がありそう。
 
-** after.local 消そう! ** 
+＃ after.local 消そう!
+
+＃ howto-extend-md-resource.md
+	
+	idisk.img の拡張方法 要調査
