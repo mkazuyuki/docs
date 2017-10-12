@@ -3,13 +3,13 @@
 
 --------
 
-## Disclaimer
+# Disclaimer
 
 The contents of this document are subject to change without notice. NEC Corporation assumes no responsibility for technical or editorial mistakes in or omissions from this document. To obtain the benefits of the product, it is the customer’s responsibility to install and use the product in accordance with this document. The copyright for the contents of this document belongs to NEC Corporation. Copying, altering, or translating this document, in full or in part, without the permission of NEC Corporation, is prohibited.
 
 --------
 
-## About this Guide
+# About this Guide
 
 This guide provides a hands-on "Quick Start" set of instructions for the EXPRESSCLUSTER X for Linux. The guide assumes its readers to have Linux system administration knowledge and skills with experience in installation and configuration of CentOS or Red Hat Enterprise Linux operating systems, Storages, and Networks. The guide includes step-by-step instructions to install and configure EXPRESSCLUSTER X with iSCSI Target, vSphere Management Assistant (vMA) and vSphere ESXi.
 
@@ -27,7 +27,7 @@ Chapter 4: Common Maintenance Tasks - describes how to perform common maintenanc
 
 ----
 
-## Where to go for more information
+# Where to go for more information
 
 For any further information, please visit the EXPRESSCLUSTER web-site at
 
@@ -53,7 +53,7 @@ info@expresscluster.jp.nec.com
 
 ----
 
-## Overview
+# Overview
 
 The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Primary and Standby) for high availability of UC VMs consists of the following major steps:
 
@@ -66,10 +66,10 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
     
 ----
 
-## System Requirements and Planning
+# System Requirements and Planning
 
-<!--
-### Physical Servers
+
+## Physical Servers
 
 - 2 PC Servers for ESXi
 
@@ -88,18 +88,17 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
   - recommended amount of storage
 
 	(amount for ESXi system) + (required amount for UC VMs) + (16GB for iSCSI VM) + (3GB for vMA VM)
--->
 
-### Product Versions
+## Product Versions
 - VMware vSphere Hypervisor 6.0 (VMware ESXi 6.0)
 - vSphere Management Assistant 6.0
 - Red Hat Enterprise Linux 7.2 x86_64 (or Cent OS 7.2)
 - EXPRESSCLUSTER X for Linux 3.3.3-1
 
-### Network configuration example
+## Network configuration example
 ![Network configuraiton](HAUC-NW-Configuration.jpg)
 
-### VM spec for iSCSI Target Cluster
+## VM spec for iSCSI Target Cluster
 |||
 |---      |---          |
 | vCPU    | 2 or more   | 
@@ -108,7 +107,7 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 | vHDD    | 16GB for system + required amount for UC VMs<br>(recommendation is 500GB or less) |
 
 
-### Hosts Parameters example
+## Hosts Parameters example
 
 | ESXi				| Primary		| Secondary		|
 |:---				|:---			|:---			|
@@ -142,9 +141,9 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 
 ----
 
-## Setup Procedure
+# Setup Procedure
 
-### Setting up ESXi
+## Setting up ESXi
 - Install vSphere Hypervisor.
 - Set up hostname and IP address.
 
@@ -159,9 +158,9 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
   - Select [Configuration] tab > [Security Profile] > [Properties] of Services
   - Check [Start and stop with host] > push [Start] button and make "ssh" running.
 
-### Setting up iSCSI Target Cluster
+## Setting up iSCSI Target Cluster
 
-#### Creating VMs
+### Creating VMs
 
 On each ESXi, set up a VM to have
 
@@ -172,7 +171,7 @@ On each ESXi, set up a VM to have
 | Network   | 3 ports       |
 | vHDD      | 16GB for OS + required amount for UC VMs<br>(recommendation is 500GB or less) |
 
-#### Installing OS and packages
+### Installing OS and packages
 
 On both iSCSI Target VMs,
 
@@ -189,7 +188,7 @@ On both iSCSI Target VMs,
 		# clplcnsc -i [replicator-license-file] -p REPL33
 		# reboot
 
-#### Configuring iSCSI Target Cluster
+### Configuring iSCSI Target Cluster
 
 On the client PC,
 
@@ -197,8 +196,14 @@ On the client PC,
 - Change to [Operation Mode] from [Config Mode]
 - Configure the cluster *iSCSI-Cluster* which have no failover-group.
     - Configure two Heartbeat I/F
-      - 192.168.0.11 , 192.168.O.12 for primary interconnect
-      - 192.168.1.11 , 192.168.1.12 for secondary interconnect and mirror connect
+      - 192.168.0.11 , 192.168.0.12 for primary interconnect
+      - 192.168.1.11 , 192.168.1.12 for secondary interconnect and mirror-connect
+
+#### Enabling primary node surviving on the dual-active detection
+- Right click [iscsi-cluster] in left pane > [Properties]
+- [Recovery] tab > [Detail Config] in right hand of [Disable Shutdown When Multi-Failover-Service Detected] 
+- Check [iscsi1] > [OK]
+- [OK]
 
 #### Adding the failover-group for controlling iSCSI Target service.
 - Right click [Groups] in left pane > [Add Group]
@@ -286,7 +291,7 @@ This resource is enabling more automated MD recovery by supposing the node which
     - select [No operation] as [Final Action]
     - [Finish]
 
-#### Adding Monitor which make remote vMA VM and ECX keep online.
+#### Adding Monitor which make remote iSCSI VM and ECX keep online.
 - on Cluster Manager
   - change to [Operation Mode] from [Config Mode]
   - right click [Monitors] > [Add Monitor Resource]
@@ -430,7 +435,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     	# exit
     	>
     
-- on vma1 console,
+- On vma1 console,
     setup ESXi thumbprint to use esxcli command
 
     	$ sudo bash
@@ -439,7 +444,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
     	New entry added successfully
 
-- on vma2 console,
+- On vma2 console,
     setup ESXi thumbprint to use esxcli command
 
     	$ sudo bash
@@ -447,8 +452,6 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     	Connect to 10.0.0.2 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
     	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.2 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
     	New entry added successfully
-
-#### Configuring Failover Cluster
 
 - On vma1 and vma2 console
   - Put ECX rpm file and its license file by using scp command and so on.
@@ -459,7 +462,8 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     	# clplcnsc -I [license file] -P BASE33
     	# reboot
 
-- Configure ECX On Cluster Manager
+#### Configure ECX on Cluster Manager
+
   - Access http://10.0.0.21:29003/ with web browser to open *Cluster Manager*
   - on Cluster Manager
     - change to [Config Mode] from [Operation Mode]
@@ -510,7 +514,6 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
       select [failvoer-VMn] > [OK] >  
       [Finish]
     - [Finish] > [Yes]
-    - [File] menu > [Apply the Configuration File]
     - **OPTIONAL** : Do the followings if iSCSI Target Cluster and vMA Cluster need to be failed over simultaneously.
         ----
         - Right click [failover-VMn] in left pane > [Add Resource]
@@ -536,13 +539,21 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
         - [File] menu > [Apply the Configuration File]
         ----
 
-  - on Cluster Manager
+  - Enabling primary node surviving on the dual-active detection
+    - Right click [vMA-cluster] in left pane > [Properties]
+    - [Recovery] tab > [Detail Config] in right hand of [Disable Shutdown When Multi-Failover-Service Detected]
+    - Check [vma1] > [OK]
+    - [OK]
 
+  - Applying the configuration
+    - [File] menu > [Apply the Configuration File]
+
+  - Starting the vMA cluster
     - change to [Operation Mode] from [Config Mode]
     - [Service] menu > [Start Cluster]
 
 #### Configuring Monitor resource
-  
+
 - On vma1 console
   - copy public key of root user to esxi2
 
@@ -630,7 +641,6 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 #### Adding Monitor which make remote vMA VM and ECX keep online.
 - on Cluster Manager
-  - change to [Operation Mode] from [Config Mode]
   - right click [Monitors] > [Add Monitor Resource]
   - [Info] section
     - select [custom monitor] as [type] > input *genw-remote-node* > [Next]
@@ -657,7 +667,8 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     - [Finish]
 
 #### Applying the configuration
-    - [File] menu > [Apply the Configuration File]
+- on Cluster Manager
+  - [File] menu > [Apply the Configuration File]
 
 ### Setting up ESXi - VM automatic boot, Network
 - Configure both ESXi to automatically boot all the nodes in vMA Cluster (vma1, vma2) and iSCSI Target Cluster (iscsi1, iscsi2) when ESXi starts.
