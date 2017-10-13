@@ -8,10 +8,11 @@
 	after.local が要らなくなっている可能性があるので、確認すること。
 
 ->	after.local がやっていること
-		- invalid VM の削除
-		- iSCSI Datastore に入っていて、かつ、ESXi に登録されている VM の電源断、登録削除
+		- Surprise PowerOff > PowerOn で ESXi に(無効な)VM登録が残るへの対策を意図して
+			- invalid VM の削除
+			- iSCSI Datastore に入っていて、かつ、ESXi に登録されている VM の電源断 > 登録削除
 
-	stop.sh (vm-start.pl) がやっていること
+	start.sh (vm-start.pl) がやっていること
 		- iSCSI Datastore が見つからなければ、vmhba をリスキャンして iSCSI接続を促す
 		- invalid VM の削除は登録処理が失敗した場合に行う。
 
