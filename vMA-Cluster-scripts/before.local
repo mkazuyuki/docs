@@ -1,0 +1,32 @@
+#! /bin/sh
+
+#
+# When the EC gets emergency shutdown on dual-active detection,
+# The VMs may remain powered on and it causes the same VM running on multiple ESXi.
+# This script power off and unregister the VMs on local ESXi before shutdown of vMA.
+#
+# Put this file as /etc/init.d/before.local
+# Then issute
+# chmod 744 /etc/init.d/before.local
+#
+
+####
+# IP address of VMkernel port on the local ESXi.
+vmk=10.0.0.1
+#vmk=10.0.0.2
+
+####
+# Datastore name for iSCSI shared disk which the host ESXi access.
+DatastoreName=iSCSI
+
+# Unregistering "invalid VMs" and "existing UC VMs" from ESXi inventory
+HOME=/root
+logger -t expresscls "**** entr  before.local ****"
+ssh -i ~/.ssh/id_rsa $vmk "
+for a in \$(vim-cmd vmsvc/getallvms 2>&1 | grep '\[$DatastoreName\]' | awk '{print \$1}'); do
+	echo \"stop and unregister VM ID[\$a]\"
+	vim-cmd vmsvc/power.off \$a 2>&1
+	vim-cmd vmsvc/unregister \$a 2>&1
+done
+" | logger -t expresscls
+logger -t expresscls "**** exit before.local ****"
