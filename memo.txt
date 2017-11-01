@@ -24,3 +24,9 @@
 ＃ howto-extend-md-resource.md
 	
 	idisk.img の拡張方法 要調査
+
+# before.local 用の説明を ESX-Host-Cluster-QSG に記載する
+
+# ESXi ホストの I/O (DK/NW)監視処理 を考慮する
+
+# targetclit は抜ける前に cd / が必要
