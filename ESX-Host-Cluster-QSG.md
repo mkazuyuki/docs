@@ -358,6 +358,7 @@ On iscsi1, create fileio backstore and configure it as backstore for the iSCSI T
 
 - Save config and exit.
 
+		> cd /
 		> saveconfig
 		> exit
 
@@ -555,26 +556,34 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 #### Configuring Monitor resource
 
 - On vma1 console
-  - copy public key of root user to esxi2
+  - copy public key of root user to esxi1 and esxi2
 
     	> sudo bash
+    	# scp ~/.ssh/id_rsa.pub 10.0.0.1:/etc/ssh/keys-root/
     	# scp ~/.ssh/id_rsa.pub 10.0.0.2:/etc/ssh/keys-root/
 
-  - remote login to esxi2 as root user and configure ssh for remote execution from vma1.
+  - remote login to esx1 and esxi2 as root user and configure ssh for remote execution from vma1.
 
-    	# ssh 10.0.0.2
-	Password:
+    	# ssh 10.0.0.1
+    	Password:
 
     	# cd /etc/ssh/keys-root
     	# cat id_rsa.pub >> authorized_keys
+    	# rm id_rsa.pub
     	# exit
+    	# ssh 10.0.0.2
+    	Password:
 
+    	# cd /etc/ssh/keys-root
+    	# cat id_rsa.pub >> authorized_keys
+    	# rm id_rsa.pub
+    	# exit
     	# exit
     	> exit
 
 - On vma2 console (do the same for esxi1 (10.0.0.1))
-  - copy public key of root user to esxi1
-  - remote login to esxi1 as root user and configure ssh for remote execution from vma2.
+  - copy public key of root user to esxi1 and esxi2
+  - remote login to esxi1 and esxi2 as root user and configure ssh for remote execution from vma2.
 
 #### Adding monitor for remote ESXi iSCSI session and ESXi inventory
 - on Cluster Manager
@@ -672,6 +681,10 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 ### Setting up ESXi - VM automatic boot, Network
 - Configure both ESXi to automatically boot all the nodes in vMA Cluster (vma1, vma2) and iSCSI Target Cluster (iscsi1, iscsi2) when ESXi starts.
+
+	Starting order should be
+	- esxi1 : iscsi1 then vma1
+	- esxi2 : iscsi2 then vma2
 
 <!-- TBD -->
 
