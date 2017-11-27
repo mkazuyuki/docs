@@ -169,6 +169,9 @@ sub RegisterVm{
 		if (/msg = \"The specified key, name, or identifier '(\d+)' already exists.\"/) {
 			$vmid = $1;
 		}
+		if (/msg = \"The object or item referred to could not be found.\"/) {
+			return 1;
+		}
 	}
 	if ($vmid eq "") {
 		&Log("[I][RegisterVm] [$vmname] at [$vmk] registered\n");
