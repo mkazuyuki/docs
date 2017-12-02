@@ -8,21 +8,8 @@
 #		https://my.vmware.com/jp/web/vmware/details?productId=491&downloadGroup=VCLI60U2
 #
 
-#
-# 2017/11/14	スクリプトを抜けるときに、start.sh、stop.sh、monitor.sh を作成すること。
-#
-
 use strict;
 use Cwd;
-
-#----------------
-#use XML::Simple;
-use Data::Dumper;
-use XML::LibXML qw();
-
-my $parser = XML::LibXML->new();
-my $root = $parser->parse_file('./DQA-cfg/clp.conf');
-#----------------
 
 my $vmcmd_dir = $ENV{'ProgramFiles'} . '\VMware\VMware vSphere CLI\bin';
 my $vmcmd = 'vmware-cmd.pl';
@@ -31,6 +18,7 @@ my $CFG_DIR	= "conf";
 my $CFG_FILE	= $CFG_DIR . "/clp.conf";
 
 my $TMPL_DIR	= "template";
+my $TMPL_CONF	= $TMPL_DIR . "/clp.conf";
 my $TMPL_START	= $TMPL_DIR . "/vm-start.pl";
 my $TMPL_STOP	= $TMPL_DIR . "/vm-stop.pl";
 my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
@@ -49,35 +37,55 @@ my $vmhba	= "vmhba33";					# iSCSI Software Adapter
 #my $dsname	= "iSCSI";			# iSCSI Datastore
 #my $vmhba	= "vmhba33";			# iSCSI Software Adapter
 
-my @vms = ();
-
+my %VMs = ();
 my @menu_vMA;
+my $ret 	= "";
 
 ## For DEBUG
 ###########
-my $file = './DQA-cfg/clp.1.conf';
+#my $file = './DQA-cfg/clp.1.conf';
+my $file = $TMPL_CONF;
 open(IN, $file);
 my @lines = <IN>;
 close(IN);
+###########
 
-&DelNode("NMC");
+foreach (@lines){
+	if (/<group name=\"failover-(.*)\">/) {
+		#print "[D] $1\n";
+		$VMs{$1} = "";
+	}
+}
+
+while ( 1 ) {
+	if ( ! &select ( &menu ) ) {exit}
+}
+
+##
+# subroutines
+#
+
+
+
+#&addVM();
+#&DelNode("NMC");
 #&ShowNode();
-&DelNode("SV9500_ESXi_B");
+#&DelNode("SV9500_ESXi_B");
 #&ShowNode();
-&AddNode("vm1");
-&Save();
+#&AddNode("vm1");
+
+#&Save();
 
 # &AddNode("vm1");
-foreach (@lines){
-	chomp;
+#foreach (@lines){
+#	chomp;
 #	print "$_\n";
-}
-exit;
+#}
 
-$root->toFile('a.xml');
-exit;
+#exit;
 
 #
+# Changing clp.conf contents for adding new VM group resource
 #-------
 sub AddNode {
 	my $vmname = shift;
@@ -93,12 +101,19 @@ sub AddNode {
 			last;
 		}
 	}
-
 	for($i = $#lines; $i > 0; $i--){
 		if($lines[$i] =~ /<\/group>/){
 			last;
 		}
+		elsif($lines[$i] =~ /<\/root>/){
+			last;
+		}
 	}
+	#if($i == 0){
+	#	$i = $#lines - 1;
+	#}
+
+	# inserting @ins into @lines
 	my @ins = (
 		"	<group name=\"failover-$vmname\">",
 		"		<comment> <\/comment>",
@@ -106,11 +121,7 @@ sub AddNode {
 		"		<gid>$gid</gid>",
 		"	</group>"
 	);
-	if($i == 0){
-		$i = $#lines - 1;
-	}
-	# inserting @ins into @lines
-	splice(@lines,$i+1,0,@ins);
+	splice(@lines, $i+1, 0, @ins);
 
 	#
 	# Resource
@@ -132,21 +143,8 @@ sub AddNode {
 			last;
 		}
 	}
-	splice(@lines,$i,0,@ins);
+	splice(@lines, $i, 0, @ins);
 
-	#
-	# Create start.sh stop.sh
-	#
-	my $DIR = "conf/scripts/failover-$vmname/exec-$vmname";
-	mkdir $DIR if (!-d $DIR);
-	#open (OUT, "> $DIR/start.sh");
-	open (IN,  "template/vm-start.pl");
-	while(<IN>){
-		if (/%%VMX%%/) {
-	#		s/%%VMX%%/$vmx/;
-		}
-	}
-	
 	#
 	# Object number
 	#
@@ -156,14 +154,28 @@ sub AddNode {
 			last;
 		}
 	}
+	#
+	# Create start.sh stop.sh
+	#
+	#my $DIR = "conf/scripts/failover-$vmname/exec-$vmname";
+	#mkdir $DIR if (!-d $DIR);
+	##open (OUT, "> $DIR/start.sh");
+	#open (IN,  "template/vm-start.pl");
+	#while(<IN>){
+	#	if (/%%VMX%%/) {
+	##		s/%%VMX%%/$vmx/;
+	#	}
+	#}
 }
 
 sub DelNode {
 	my $vmname = shift;
-#	my $rsname = "";	# resource name
 	my $i = 0;
 	my $j = 0;
 	my $gid = 0;
+
+	print "[D] deleting [$VMs{$vmname}]\n";
+	delete($VMs{$vmname});
 
 	#
 	# Group
@@ -213,27 +225,24 @@ sub DelNode {
 	}
 }
 
-sub ShowNode {
-	my $i = 1;
-	foreach (@lines) {
-		if (/<group name=\"failover-(.*)\">/) {
-			print "\t[" . $i++ . "]\t$1\n";
-		}
-	}
-}
-
 sub Save {
 	my @VM = ();
 
+	#
+	# Saving clp.conf
+	#
 	open(OUT, "> $CFG_FILE");
 	print OUT @lines;
 	close(OUT);
 
+	#
+	# Making directry for Group and Monitor resource
+	#
 	foreach (@lines){
-		my @DIR = ();
 		if (/<group name=\"failover-(.*)\">/) {
-			print "[D] $1\n";
-			push @VM;
+			#print "[D] $1\n";
+			push @VM, $1;
+			my @DIR = ();
 			push @DIR, "$CFG_DIR/scripts/failover-$1";
 			push @DIR, "$CFG_DIR/scripts/failover-$1/exec-$1";
 			push @DIR, "$CFG_DIR/scripts/monitor.s/genw-$1";
@@ -243,156 +252,109 @@ sub Save {
 		}
 	}
 
-	foreach (@VM) {
-		
+	#
+	# Creating start.sh stop.sh genw.sh
+	#
+	foreach my $vm (keys %VMs) {
+		open(IN, "$TMPL_START") or die;
+		open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/start.sh") or die;
+		while (<IN>) {
+			#print "[D<] $_" if /%%/;
+
+			if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+			if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+			if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+			if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+			if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+			if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+			if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+
+			#print "[D ] $_";
+			print OUT;
+		}
+		close(OUT);
+		close(IN);
+
+		open(IN, "$TMPL_STOP");
+		open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/stop.sh");
+		while (<IN>) {
+			#print "[D<] $_" if /%%/;
+
+			if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+			#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+			if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+			if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+			if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+			if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+			if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+
+			#print "[D ] $_";
+			print OUT;
+		}
+		close(OUT);
+		close(IN);
+
+		open(IN, "$TMPL_MON");
+		open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-$vm/genw.sh");
+		while (<IN>) {
+			#print "[D<] $_" if /%%/;
+
+			if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+			#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+			#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+			if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+			if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+			if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+			if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+
+			#print "[D ] $_";
+			print OUT;
+		}
+		close(OUT);
+		close(IN);
 	}
-
-	return 1;
-	
-	open(IN, "$TMPL_START");
-	open(OUT,"> $CFG_DIR/scripts/aaa");
-	while (<IN>) {
-		chomp;
-		print "$_\n";
-		
-		if (/%%VMX%%/)		{			print "$&\n" }
-		if (/%%VMHBA%%/)	{ s/$&/$vmhba/;		print "$_\n" }
-		if (/%%DATASTORE%%/)	{ s/$&/$dsname/;	print "$_\n" }
-		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;	print "$_\n" }
-		if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;	print "$_\n" }
-		if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;	print "$_\n" }
-		if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;	print "$_\n" }
-	}
-	close(OUT);
-	close(IN);
+	return 0;
 }
-
-########
-my $simple = XML::Simple->new (ForceArray => 1, KeepRoot => 1);
-#my $data = $simple->XMLin('./apply/clp.conf');
-#my $data = $simple->XMLin('./DQA-cfg/clp.conf');
-my $data = $simple->XMLin('./vma-cfg/clp.conf');
-
-#print Dumper($data);
-
-#foreach my $s1 (keys %{$data->{root}[0]->{group}}){
-#	print  "[D] group	[$s1]\n";
-#	printf "[D]	resource	[%s]\n", %{$data->{root}[0]->{group}->{$s1}->{resource}};
-#	printf "[D]	gid		[%s]\n",   $data->{root}[0]->{group}->{$s1}->{gid}[0];
-#	if ( $data->{root}[0]->{group}->{$s1}->{comment}[0] !~ /0/ ){
-#	printf "[D]	comment		[%s]\n",   $data->{root}[0]->{group}->{$s1}->{comment}[0];
-#	} else {
-#	print "[D]	comment		[ ]\n";
-#	}
-#}
-
-#=======
-#print Dumper($data->{root}[0]->{group}->{'failover-SV95'});
-#print Dumper($data->{root}[0]->{group}->{'failover-UCE2016SP1'});
-
-#$data->{root}[0]->{group}->{'failover-cent'}->{resource}->{'exec@exec-cent'} = {};
-#$data->{root}[0]->{group}->{'failover-cent'}->{gid} = ['100'];
-#$data->{root}[0]->{group}->{'failover-cent'}->{comment} = [{}];
-
-#print Dumper($data->{root}[0]->{group}->{'failover-cent'});
-
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{'exec-SV95'} );
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{'exec-SV95'}->{parameters} );
-
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{'exec-SV95'}->{parameters}[0]->{userlog}[0] );
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{'exec-SV95'}->{parameters}[0]->{logrotate}[0]->{use}[0] );
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{'exec-SV95'}->{parameters}[0]->{deact}[0]->{path}[0] );
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{'exec-SV95'}->{parameters}[0]->{act}[0]->{path}[0] );
-
-my $s = "exec-cent7";
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{$s}->{parameters}[0]->{userlog}[0] );
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{$s}->{parameters}[0]->{logrotate}[0]->{use}[0] );
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{$s}->{parameters}[0]->{deact}[0]->{path}[0] );
-#print Dumper( $data->{root}[0]->{resource}[0]->{exec}->{$s}->{parameters}[0]->{act}[0]->{path}[0] );
-
-#print Dumper($data->{root}[0]->{resource}[0]);
-#print Dumper($data->{root}[0]->{resource}[0]->{exec});
-#print Dumper($data->{root}[0]->{resource}[0]->{exec}->{'exec-cent7'});
-
-print Dumper($data->{root}[0]->{resource}[0]->{exec}->{'exec-cent7'});
-#exit;
-#print Dumper($data->{root}[0]->{resource}[0]->{exec}->{$s}->{parameters}[0]);
-#print Dumper($data->{root}[0]->{resource}[0]->{exec}->{$s}->{act}[0]->{retry}[0]);
-#print Dumper($data->{root}[0]->{resource}[0]->{exec}->{$s}->{comment}[0]);
-
-$s = "exec-vm1";
-
-$data->{root}[0]->{resource}[0]->{exec}->{"$s"}->{act}[0]->{retry}[0]	= '2';
-$data->{root}[0]->{resource}[0]->{exec}->{"$s"}->{comment}[0]	= ' ';
-$data->{root}[0]->{resource}[0]->{exec}->{"$s"}->{parameters}[0]->{userlog}[0]		= "/opt/nec/clusterpro/log/" . $s . ".log";
-$data->{root}[0]->{resource}[0]->{exec}->{"$s"}->{parameters}[0]->{logrotate}[0]->{use}[0]= '1';
-$data->{root}[0]->{resource}[0]->{exec}->{"$s"}->{parameters}[0]->{deact}[0]->{path}[0]	= 'stop.sh';
-$data->{root}[0]->{resource}[0]->{exec}->{"$s"}->{parameters}[0]->{act}[0]->{path}[0]	= 'start.sh';
-#print Dumper($data->{root}[0]->{resource}[0]->{exec}->{$s});
-
-#print Dumper( $data->{root}[0]->{resource}[0] );
-
-#=======
-
-$simple->XMLout($data,
-	NoAttr=>1,
-	KeepRoot => 1,
-	OutputFile => 'a.xml',
-	XMLDecl    => "<?xml version=\"1.0\" encoding=\"ASCII\"?>",
-);
-
-exit;
-########
-
-
-
-
-
-while ( 1 ) {
-	if ( ! &select ( &menu ) ) {exit}
-}
-
-##
-# subroutines
-#
 
 sub menu {
 	@menu_vMA = (
-		'  exit',
-		'* set ESXi#1 IP            : ' . $esxi_ip[0],
-		'* set ESXi#2 IP            : ' . $esxi_ip[1],
-		'* set ESXi#1 root password : ' . $esxi_pw[0],
-		'* set ESXi#2 root password : ' . $esxi_pw[1],
-		'  set vMA#1 hostname       : ' . $vma_hn[0],
-		'  set vMA#2 hostname       : ' . $vma_hn[1],
-		'  set vMA#1 IP             : ' . $vma_ip[0],
-		'  set vMA#2 IP             : ' . $vma_ip[1],
-		'  set iSCSI Datastore name : ' . $dsname,
-		'  set iSCSI Adapter name   : ' . $vmhba,
-		'* add VM',
-		'  del VM',
-		'  show VM'
+		'save and exit',
+		'set ESXi#1 IP            : ' . $esxi_ip[0],
+		'set ESXi#2 IP            : ' . $esxi_ip[1],
+		'set ESXi#1 root password : ' . $esxi_pw[0],
+		'set ESXi#2 root password : ' . $esxi_pw[1],
+		'set vMA#1 hostname       : ' . $vma_hn[0],
+		'set vMA#2 hostname       : ' . $vma_hn[1],
+		'set vMA#1 IP             : ' . $vma_ip[0],
+		'set vMA#2 IP             : ' . $vma_ip[1],
+		'set iSCSI Datastore name : ' . $dsname,
+		'set iSCSI Adapter name   : ' . $vmhba,
+		'add VM',
+		'del VM',
+		'show VM'
 	);
 	my $i = 0;
 	print "\n--------\n";
 	foreach (@menu_vMA) {
 		print "[" . ($i++) . "] $_\n";  
 	}
-	print "\n(*) able to select\n(0.." . ($i - 1) . ") > ";
+	print "\n(0.." . ($i - 1) . ") > ";
 
-	my $ret = <STDIN>;
+	$ret = <STDIN>;
 	chomp $ret;
 	return $ret;
 }
 
 sub select {
-	my $i = $_[0];
+	my $i = shift;
 	if ($i !~ /^\d+$/){
 		print "invalid (should be numeric)\n";
 		return -1;
 	}
-	elsif ( $menu_vMA[$i] =~ /exit/ ) {
-		print "exit\n";
+	elsif ( $menu_vMA[$i] =~ /save and exit/ ) {
+		&Save;
+		print "bye\n";
+		return 0;
 	}
 	elsif ( $menu_vMA[$i] =~ /set ESXi#([1..2]) IP/ ) {
 		&setESXiIP($1);
@@ -400,8 +362,26 @@ sub select {
 	elsif ( $menu_vMA[$i] =~ /set ESXi#([1,2]) root password/ ) {
 		&setESXiPwd($1);
 	}
+	elsif ( $menu_vMA[$i] =~ /set vMA#([1,2]) hostname/ ) {
+		&setvMAhostname($1);
+	}
+	elsif ( $menu_vMA[$i] =~ /set vMA#([1,2]) IP/ ) {
+		&setvMAIP($1);
+	}
+	elsif ( $menu_vMA[$i] =~ /set iSCSI Datastore name/ ) {
+		&setDatastoreName;
+	}
+	elsif ( $menu_vMA[$i] =~ /set iSCSI Adapter name/ ) {
+		&setVMHBA;
+	}
 	elsif ( $menu_vMA[$i] =~ /add VM/ ) {
 		&addVM;
+	}
+	elsif ( $menu_vMA[$i] =~ /del VM/ ) {
+		&delVM;
+	}
+	elsif ( $menu_vMA[$i] =~ /show VM/ ) {
+		&showVM;
 	}
 	else {
 		print "[$i] Invalid.\n";
@@ -412,7 +392,7 @@ sub select {
 sub setESXiIP {
 	my $i = $_[0] - 1;
 	print "[" . $esxi_ip[$i] . "] > ";
-	my $ret = <STDIN>;
+	$ret = <STDIN>;
 	chomp $ret;
 	if ($ret ne "") {
 		$esxi_ip[$i] = $ret;
@@ -422,10 +402,48 @@ sub setESXiIP {
 sub setESXiPwd{
 	my $i = $_[0] - 1;
 	print "[" . $esxi_pw[$i] . "] > ";
-	my $ret = <STDIN>;
+	$ret = <STDIN>;
 	chomp $ret;
 	if ($ret ne "") {
 		$esxi_pw[$i] = $ret;
+	}
+}
+
+sub setvMAhostname{
+	my $i = $_[0] - 1;
+	print "[" . $vma_hn[$i] . "] > ";
+	$ret = <STDIN>;
+	chomp $ret;
+	if ($ret ne "") {
+		$vma_hn[$i] = $ret;
+	}
+}
+
+sub setvMAIP{
+	my $i = $_[0] - 1;
+	print "[" . $vma_ip[$i] . "] > ";
+	$ret = <STDIN>;
+	chomp $ret;
+	if ($ret ne "") {
+		$vma_ip[$i] = $ret;
+	}
+}
+
+sub setDatastoreName{
+	print "[" . $dsname . "] > ";
+	$ret = <STDIN>;
+	chomp $ret;
+	if ($ret ne "") {
+		$dsname = $ret;
+	}
+}
+
+sub setVMHBA{
+	print "[" . $vmhba . "] > ";
+	$ret = <STDIN>;
+	chomp $ret;
+	if ($ret ne "") {
+		$vmhba = $ret;
 	}
 }
 
@@ -444,60 +462,65 @@ sub addVM {
 
 	print "\n--------\n";
 	my $i = 0;
+	print "[0] BACK\n";
 	foreach (@out) {
 		chomp;
-		if ($i == 0) {
-			print "[$i] BACK\n";
-		}
-		elsif (! /^$/){
+		if ( /.*\/(.*)\.vmx$/ ){
 			print "[$i] [$_]\n";
 		}
 		$i++;
 	}
-
 	print "\nwhich to add? (1.." . ($i -1) . ") > ";
+	my $j = <STDIN>;
+	chomp $j;
+	if ($j !~ /^\d+$/){
+		return -1;
+	} elsif ($j == 0){
+		return 0;
+	} elsif ($j - 1 > $i) {
+		return 0;
+	} else {
+		my $vmname = $out[$j];
+		$vmname =~ s/.*\/(.*)\.vmx/$1/;
+		$VMs{$vmname} = $out[$j];
+		&AddNode($vmname);
+		print "\n[I] added [$vmname]\n";
+	}
+}
+
+sub delVM {
+	my $i = 1;
+	my @list = ();
+	print "\n--------\n";
+	print "[0] BACK\n";
+	foreach (keys %VMs) {
+		print "[$i] [$_]\n";
+		push @list, $_;
+		$i++;
+	}
+	print "\nwhich to del? (1.." . ($i -1) . ") > ";
 	$i = <STDIN>;
 	chomp $i;
 	if ($i !~ /^\d+$/){
 		return -1;
 	} elsif ($i == 0){
 		return 0;
+	} elsif ($i - 1 > $#list) {
+		return 0;
 	} else {
-		#$vms[$i] = $out[$i];
-		my $vmname = $out[$i];
-		$vmname =~ s/.*\/(.*)\.vmx/$1/;
-		my $group_name = "failover-" . $vmname;
-		my $resource_name = 'exec@exec-' . $vmname;
+		my $vmname = $list[$i-1];
+		&DelNode($vmname);
+		print "\n[I] deleted [$vmname]\n";
+	}
+}
 
-		my $gid = 0;
-
-#        <group name="failover-UM4730">
-#                <comment> </comment>
-#                <resource name="exec@exec-UM4730"/>
-#                <gid>9</gid>
-#        </group>
-		
-		foreach my $s1 (keys %{$data->{root}[0]->{group}}){
-			print "[D] " . $data->{root}[0]->{group}->{$s1}->{gid}[0] . "[$s1]" . "\n";
-			if ( $gid < $data->{root}[0]->{group}->{$s1}->{gid}[0] ){
-				$gid = $data->{root}[0]->{group}->{$s1}->{gid}[0];
-			}
+sub showVM {
+	print "\n";
+	my $i = 1;
+	foreach (@lines) {
+		if (/<group name=\"failover-(.*)\">/) {
+			print "\t[" . $i++ . "]\t$1\n";
 		}
-		$gid++;
-
-		$data->{root}[0]->{group}->{$group_name}->{resource}->{$resource_name} = {};
-		$data->{root}[0]->{group}->{$group_name}->{gid} = ["$gid"];
-		$data->{root}[0]->{group}->{$group_name}->{comment} = [{}];
-		#print Dumper($data->{root}[0]->{group}->{$group_name});
-
-		$resource_name = 'exec-' . $vmname;
-		$data->{root}[0]->{resource}[0]->{exec}->{$resource_name}->{parameters}[0]->{userlog}[0]		= "/opt/nec/clusterpro/log/" . $resource_name . ".log";
-		$data->{root}[0]->{resource}[0]->{exec}->{$resource_name}->{parameters}[0]->{logrotate}[0]->{use}[0]	= '1';
-		$data->{root}[0]->{resource}[0]->{exec}->{$resource_name}->{parameters}[0]->{deact}[0]->{path}[0]	= 'stop.sh';
-		$data->{root}[0]->{resource}[0]->{exec}->{$resource_name}->{parameters}[0]->{act}[0]->{path}[0]		= 'start.sh';
-		#print Dumper($data->{root}[0]->{resource}[0]->{exec}->{$resource_name]->{parameters}[0]);
-
-		print "\n[I] added [$group_name]\n";
 	}
 }
 

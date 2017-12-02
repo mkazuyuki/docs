@@ -38,4 +38,11 @@
   inventory への VM register が invalid な VM を登録した場合、電源ON で そんなVMはない と失敗する
   vm-start.pl は対策済みなので、 FOGかexecリソースの活性リトライで救う必要がある。
 
-# VM インベントリ登録、起動失敗時のメッセージを全部ログに出すこと。(先頭1行のみログ出力となっているパタンがある。ライセンス切れを起こしたとき、ログからわかるようにする意図)
+# VM インベントリ登録、起動失敗時のメッセージを全部ログに出すこと。
+  (先頭1行のみログ出力となっているパタンがある。ライセンス切れを起こしたとき、ログからわかるようにする意図)
+
+# genw-remote-node.pl のために、vMA VM の名前は以下のようになる必要がある。
+	'vSphere Management Assistant (vMA)01'
+	'vSphere Management Assistant (vMA)02'
+
+# テンプレートの　genw-remote-node.pl genw-remote-esxi.pl を編集して conf 配下に出力するように cf.pl を直すこと。
