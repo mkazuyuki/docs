@@ -154,18 +154,6 @@ sub AddNode {
 			last;
 		}
 	}
-	#
-	# Create start.sh stop.sh
-	#
-	#my $DIR = "conf/scripts/failover-$vmname/exec-$vmname";
-	#mkdir $DIR if (!-d $DIR);
-	##open (OUT, "> $DIR/start.sh");
-	#open (IN,  "template/vm-start.pl");
-	#while(<IN>){
-	#	if (/%%VMX%%/) {
-	##		s/%%VMX%%/$vmx/;
-	#	}
-	#}
 }
 
 sub DelNode {
@@ -313,6 +301,41 @@ sub Save {
 		close(OUT);
 		close(IN);
 	}
+
+	open(IN, "$TMPL_DIR/genw-esxi-inventory.pl") or die;
+	open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-esxi-inventory/genw.sh") or die;
+	while (<IN>) {
+		#print "[D<] $_" if /%%/;
+		#if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+		if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+		if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+		if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+		if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+		if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+		#print "[D ] $_";
+		print OUT;
+	}
+	close(OUT);
+	close(IN);
+
+	open(IN, "$TMPL_DIR/genw-remote-node.pl") or die;
+	open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-remote-node/genw.sh") or die;
+	while (<IN>) {
+		#print "[D<] $_" if /%%/;
+		#if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+		#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+		#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+		if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+		if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+		if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+		#print "[D ] $_";
+		print OUT;
+	}
+	close(OUT);
+	close(IN);
+
 	return 0;
 }
 
