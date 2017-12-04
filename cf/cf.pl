@@ -106,6 +106,7 @@ sub AddNode {
 			last;
 		}
 		elsif($lines[$i] =~ /<\/root>/){
+			print "[D] found </root>\n";
 			last;
 		}
 	}
@@ -118,10 +119,10 @@ sub AddNode {
 		"	<group name=\"failover-$vmname\">",
 		"		<comment> <\/comment>",
 		"		<resource name=\"exec\@exec-$vmname\"/>",
-		"		<gid>$gid</gid>",
-		"	</group>"
+		"		<gid>$gid</gid>\n",
+		"	</group>\n"
 	);
-	splice(@lines, $i+1, 0, @ins);
+	splice(@lines, $i, 0, @ins);
 
 	#
 	# Resource
@@ -220,7 +221,16 @@ sub Save {
 	# Saving clp.conf
 	#
 	open(OUT, "> $CFG_FILE");
-	print OUT @lines;
+	foreach (@lines){
+		#print "[D<] $_" if /%%/;
+		if (/%%VMA1%%/)	{ s/$&/$vma_hn[0]/;}
+		if (/%%VMA2%%/)	{ s/$&/$vma_hn[1]/;}
+		if (/%%VMA1IP%%/)	{ s/$&/$vma_ip[0]/;}
+		if (/%%VMA2IP%%/)	{ s/$&/$vma_ip[1]/;}
+		#print "[D ] $_";
+		print OUT;
+	}
+	#print OUT @lines;
 	close(OUT);
 
 	#

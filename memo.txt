@@ -45,4 +45,4 @@
 	'vSphere Management Assistant (vMA)01'
 	'vSphere Management Assistant (vMA)02'
 
-# テンプレートの　genw-remote-node.pl genw-remote-esxi.pl を編集して conf 配下に出力するように cf.pl を直すこと。
+# テンプレートの　genw-remote-node.pl genw-remote-esxi.pl を出力するディレクトリを掘る処理を cf.pl に追加すること。
