@@ -236,18 +236,22 @@ sub Save {
 	#
 	# Making directry for Group and Monitor resource
 	#
+	my @DIR = ();
+	push @DIR, "$CFG_DIR/scripts";
+	push @DIR, "$CFG_DIR/scripts/monitor.s";
 	foreach (@lines){
 		if (/<group name=\"failover-(.*)\">/) {
 			#print "[D] $1\n";
 			push @VM, $1;
-			my @DIR = ();
 			push @DIR, "$CFG_DIR/scripts/failover-$1";
 			push @DIR, "$CFG_DIR/scripts/failover-$1/exec-$1";
 			push @DIR, "$CFG_DIR/scripts/monitor.s/genw-$1";
-			foreach (@DIR) {
-				mkdir "$_" if (!-d "$_");
-			}
 		}
+	}
+	push @DIR, "$CFG_DIR/scripts/monitor.s/genw-remote-node";
+	push @DIR, "$CFG_DIR/scripts/monitor.s/genw-esxi-inventory";
+	foreach (@DIR) {
+		mkdir "$_" if (!-d "$_");
 	}
 
 	#
