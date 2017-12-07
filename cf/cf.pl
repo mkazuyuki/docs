@@ -23,13 +23,22 @@ my $TMPL_START	= $TMPL_DIR . "/vm-start.pl";
 my $TMPL_STOP	= $TMPL_DIR . "/vm-stop.pl";
 my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
 
-my @esxi_ip	= ('192.168.137.51', '192.168.137.52');		# ESXi IP address
-my @esxi_pw	= ('cluster-0', '(none)');			# ESXi root password
-my @vma_hn	= ('vma1', 'vma2');				# vMA hostname
-my @vma_ip	= ('192.168.137.205', '192.168.137.206');	# vMA IP address
-my $dsname	= "iSCSI";					# iSCSI Datastore
-my $vmhba	= "vmhba33";					# iSCSI Software Adapter
+my @esxi_ip	= ('10.0.0.1', '10.0.0.2');		# ESXi IP address
+my @esxi_pw	= ('cluster-0', '(none)');		# ESXi root password
+my @vma_hn	= ('vma1', 'vma2');			# vMA hostname
+my @vma_ip	= ('10.0.0.21', '10.0.0.22');		# vMA IP address
+my $dsname	= "iSCSI";				# iSCSI Datastore
+my $vmhba	= "vmhba33";				# iSCSI Software Adapter
 
+## Development environment
+#my @esxi_ip	= ('192.168.137.51', '192.168.137.52');		# ESXi IP address
+#my @esxi_pw	= ('cluster-0', '(none)');			# ESXi root password
+#my @vma_hn	= ('vma1', 'vma2');				# vMA hostname
+#my @vma_ip	= ('192.168.137.205', '192.168.137.206');	# vMA IP address
+#my $dsname	= "iSCSI";					# iSCSI Datastore
+#my $vmhba	= "vmhba33";					# iSCSI Software Adapter
+
+## Initial environment
 #my @esxi_ip	= ('0.0.0.0', '0.0.0.0');	# ESXi IP address
 #my @esxi_pw	= ('(none)', '(none)'); 	# ESXi root password
 #my @vma_hn	= ('(none)', '(none)'); 	# vMA hostname
@@ -41,15 +50,9 @@ my %VMs = ();
 my @menu_vMA;
 my $ret 	= "";
 
-## For DEBUG
-###########
-#my $file = './DQA-cfg/clp.1.conf';
-my $file = $TMPL_CONF;
-open(IN, $file);
+open(IN, $TMPL_CONF);
 my @lines = <IN>;
 close(IN);
-###########
-
 foreach (@lines){
 	if (/<group name=\"failover-(.*)\">/) {
 		#print "[D] $1\n";
@@ -73,10 +76,9 @@ while ( 1 ) {
 #&DelNode("SV9500_ESXi_B");
 #&ShowNode();
 #&AddNode("vm1");
-
 #&Save();
-
 # &AddNode("vm1");
+
 #foreach (@lines){
 #	chomp;
 #	print "$_\n";
@@ -360,7 +362,7 @@ sub menu {
 		'set ESXi#1 IP            : ' . $esxi_ip[0],
 		'set ESXi#2 IP            : ' . $esxi_ip[1],
 		'set ESXi#1 root password : ' . $esxi_pw[0],
-		'set ESXi#2 root password : ' . $esxi_pw[1],
+#		'set ESXi#2 root password : ' . $esxi_pw[1],
 		'set vMA#1 hostname       : ' . $vma_hn[0],
 		'set vMA#2 hostname       : ' . $vma_hn[1],
 		'set vMA#1 IP             : ' . $vma_ip[0],
