@@ -218,25 +218,10 @@ sub Save {
 	my @VM = ();
 
 	#
-	# Saving clp.conf
-	#
-	open(OUT, "> $CFG_FILE");
-	foreach (@lines){
-		#print "[D<] $_" if /%%/;
-		if (/%%VMA1%%/)	{ s/$&/$vma_hn[0]/;}
-		if (/%%VMA2%%/)	{ s/$&/$vma_hn[1]/;}
-		if (/%%VMA1IP%%/)	{ s/$&/$vma_ip[0]/;}
-		if (/%%VMA2IP%%/)	{ s/$&/$vma_ip[1]/;}
-		#print "[D ] $_";
-		print OUT;
-	}
-	#print OUT @lines;
-	close(OUT);
-
-	#
 	# Making directry for Group and Monitor resource
 	#
 	my @DIR = ();
+	push @DIR, "$CFG_DIR";
 	push @DIR, "$CFG_DIR/scripts";
 	push @DIR, "$CFG_DIR/scripts/monitor.s";
 	foreach (@lines){
@@ -253,6 +238,22 @@ sub Save {
 	foreach (@DIR) {
 		mkdir "$_" if (!-d "$_");
 	}
+
+	#
+	# Saving clp.conf
+	#
+	open(OUT, "> $CFG_FILE");
+	foreach (@lines){
+		#print "[D<] $_" if /%%/;
+		if (/%%VMA1%%/)	{ s/$&/$vma_hn[0]/;}
+		if (/%%VMA2%%/)	{ s/$&/$vma_hn[1]/;}
+		if (/%%VMA1IP%%/)	{ s/$&/$vma_ip[0]/;}
+		if (/%%VMA2IP%%/)	{ s/$&/$vma_ip[1]/;}
+		#print "[D ] $_";
+		print OUT;
+	}
+	#print OUT @lines;
+	close(OUT);
 
 	#
 	# Creating start.sh stop.sh genw.sh
@@ -277,8 +278,8 @@ sub Save {
 		close(OUT);
 		close(IN);
 
-		open(IN, "$TMPL_STOP");
-		open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/stop.sh");
+		open(IN, "$TMPL_STOP") or die;
+		open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/stop.sh") or die;
 		while (<IN>) {
 			#print "[D<] $_" if /%%/;
 
@@ -296,8 +297,8 @@ sub Save {
 		close(OUT);
 		close(IN);
 
-		open(IN, "$TMPL_MON");
-		open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-$vm/genw.sh");
+		open(IN, "$TMPL_MON") or die;
+		open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-$vm/genw.sh") or die;
 		while (<IN>) {
 			#print "[D<] $_" if /%%/;
 
