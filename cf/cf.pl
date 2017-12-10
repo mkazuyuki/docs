@@ -94,29 +94,16 @@ sub AddNode {
 	my $i = 0;
 	my $gid = 0;
 
-	#
-	# Group
-	#
 	for($i = $#lines; $i > 0; $i--){
 		if($lines[$i] =~ /<gid>(.*)<\/gid>/){
 			$gid = $1 + 1;
 			last;
 		}
 	}
-	for($i = $#lines; $i > 0; $i--){
-		if($lines[$i] =~ /<\/group>/){
-			last;
-		}
-		elsif($lines[$i] =~ /<\/root>/){
-			print "[D] found </root>\n";
-			last;
-		}
-	}
-	#if($i == 0){
-	#	$i = $#lines - 1;
-	#}
 
-	# inserting @ins into @lines
+	#
+	# Group
+	#
 	my @ins = (
 		"	<group name=\"failover-$vmname\">",
 		"		<comment> <\/comment>",
@@ -124,7 +111,7 @@ sub AddNode {
 		"		<gid>$gid</gid>\n",
 		"	</group>\n"
 	);
-	splice(@lines, $i, 0, @ins);
+	splice(@lines, $#lines, 0, @ins);
 
 	#
 	# Resource
@@ -147,6 +134,41 @@ sub AddNode {
 		}
 	}
 	splice(@lines, $i, 0, @ins);
+
+	#
+	# Monitor
+	#
+	@ins = (
+		"	<genw name=\"genw-$vmname\">\n",
+		"		<comment> </comment>\n",
+		"		<target>exec-$vmname</target>\n",		##
+		"		<parameters>\n",
+		"			<path>genw.sh</path>\n",
+		"			<userlog>/opt/nec/clusterpro/log/genw-$vmname.log</userlog>\n",		##
+		"			<logrotate>\n",
+		"				<use>1</use>\n",
+		"			</logrotate>\n",
+		"		</parameters>\n",
+		"		<polling>\n",
+		"			<timing>1</timing>\n",
+		"		</polling>\n",
+		"		<relation>\n",
+		"			<name>failover-$vmname</name>\n",	##
+		"			<type>grp</type>\n",
+		"		</relation>\n",
+		"		<emergency>\n",
+		"			<threshold>\n",
+		"				<restart>0</restart>\n",
+		"			</threshold>\n",
+		"		</emergency>\n",
+		"	</genw>\n"
+	);
+	for($i = $#lines; $i > 0; $i--){
+		if (($lines[$i] =~ /<\/genw>/) || ($lines[$i] =~ /<types name=\"genw\"\/>/)){
+			last;
+		}
+	}
+	splice(@lines, $i +1, 0, @ins);
 
 	#
 	# Object number
@@ -393,7 +415,7 @@ sub select {
 	}
 	elsif ( $menu_vMA[$i] =~ /save and exit/ ) {
 		&Save;
-		print "bye\n";
+		print "\nThe configuration files are saved in the \"conf\" directry.\nBye.\n";
 		return 0;
 	}
 	elsif ( $menu_vMA[$i] =~ /set ESXi#([1..2]) IP/ ) {
