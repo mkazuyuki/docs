@@ -23,20 +23,20 @@ my $TMPL_START	= $TMPL_DIR . "/vm-start.pl";
 my $TMPL_STOP	= $TMPL_DIR . "/vm-stop.pl";
 my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
 
-my @esxi_ip	= ('10.0.0.1', '10.0.0.2');		# ESXi IP address
-my @esxi_pw	= ('cluster-0', '(none)');		# ESXi root password
-my @vma_hn	= ('vma1', 'vma2');			# vMA hostname
-my @vma_ip	= ('10.0.0.21', '10.0.0.22');		# vMA IP address
-my $dsname	= "iSCSI";				# iSCSI Datastore
-my $vmhba	= "vmhba33";				# iSCSI Software Adapter
+#my @esxi_ip	= ('10.0.0.1', '10.0.0.2');		# ESXi IP address
+#my @esxi_pw	= ('cluster-0', '(none)');		# ESXi root password
+#my @vma_hn	= ('vma1', 'vma2');			# vMA hostname
+#my @vma_ip	= ('10.0.0.21', '10.0.0.22');		# vMA IP address
+#my $dsname	= "iSCSI";				# iSCSI Datastore
+#my $vmhba	= "vmhba33";				# iSCSI Software Adapter
 
-## Development environment
-#my @esxi_ip	= ('192.168.137.51', '192.168.137.52');		# ESXi IP address
-#my @esxi_pw	= ('cluster-0', '(none)');			# ESXi root password
-#my @vma_hn	= ('vma1', 'vma2');				# vMA hostname
-#my @vma_ip	= ('192.168.137.205', '192.168.137.206');	# vMA IP address
-#my $dsname	= "iSCSI";					# iSCSI Datastore
-#my $vmhba	= "vmhba33";					# iSCSI Software Adapter
+# Development environment
+my @esxi_ip	= ('192.168.137.51', '192.168.137.52');		# ESXi IP address
+my @esxi_pw	= ('cluster-0', '(none)');			# ESXi root password
+my @vma_hn	= ('vma1', 'vma2');				# vMA hostname
+my @vma_ip	= ('192.168.137.205', '192.168.137.206');	# vMA IP address
+my $dsname	= "iSCSI";					# iSCSI Datastore
+my $vmhba	= "vmhba33";					# iSCSI Software Adapter
 
 ## Initial environment
 #my @esxi_ip	= ('0.0.0.0', '0.0.0.0');	# ESXi IP address
@@ -64,27 +64,11 @@ while ( 1 ) {
 	if ( ! &select ( &menu ) ) {exit}
 }
 
+exit;
+
 ##
 # subroutines
 #
-
-
-
-#&addVM();
-#&DelNode("NMC");
-#&ShowNode();
-#&DelNode("SV9500_ESXi_B");
-#&ShowNode();
-#&AddNode("vm1");
-#&Save();
-# &AddNode("vm1");
-
-#foreach (@lines){
-#	chomp;
-#	print "$_\n";
-#}
-
-#exit;
 
 #
 # Changing clp.conf contents for adding new VM group resource
@@ -125,8 +109,8 @@ sub AddNode {
 		"				<userlog>/opt/nec/clusterpro/log/exec-$vmname.log</userlog>",
 		"				<logrotate><use>1</use></logrotate>",
 		"			</parameters>",
-		"			<act><retry>2</retry></act>",
-		"		</exec>"
+		"			<act><retry>2</retry></act>\n",
+		"		</exec>\n"
 	);
 	for($i = $#lines; $i > 0; $i--){
 		if($lines[$i] =~ /<\/resource>/){
@@ -216,6 +200,22 @@ sub DelNode {
 	}
 	for($j = $i + 1; $j < $#lines; $j++){
 		if ($lines[$j] =~ /<\/exec>/) {
+			last;
+		}
+	}
+	@deleted = splice(@lines, $i, $j-$i+1);
+	#print "----\n[D]" . join ("[D]", @deleted);
+
+	#
+	# Monitor
+	#
+	for($i = 0; $i < $#lines; $i++){
+		if ($lines[$i] =~ /<genw name=\"genw-$vmname\">/) {
+			last;
+		}
+	}
+	for($j = $i + 1; $j < $#lines; $j++){
+		if ($lines[$j] =~ /<\/genw>/) {
 			last;
 		}
 	}
@@ -544,6 +544,13 @@ sub addVM {
 	} else {
 		my $vmname = $out[$j];
 		$vmname =~ s/.*\/(.*)\.vmx/$1/;
+
+		# failover-$vmanme must be shorter than 31 characters (excluding termination charcter).
+		$vmname =~ s/[^\w\s-]//g;
+		if (length($vmname) > 22) {
+			$vmname = substr ($vmname,0,22);
+		}
+		$vmname =~ s/-$//;
 		$VMs{$vmname} = $out[$j];
 		&AddNode($vmname);
 		print "\n[I] added [$vmname]\n";
