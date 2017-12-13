@@ -16,25 +16,29 @@ my $vmcmd = 'vmware-cmd.pl';
 
 my $CFG_DIR	= "conf";
 my $CFG_FILE	= $CFG_DIR . "/clp.conf";
+my $CFG_CRED	= "credstore_.pl";
 
 my $TMPL_DIR	= "template";
 my $TMPL_CONF	= $TMPL_DIR . "/clp.conf";
 my $TMPL_START	= $TMPL_DIR . "/vm-start.pl";
 my $TMPL_STOP	= $TMPL_DIR . "/vm-stop.pl";
 my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
+my $TMPL_CRED	= $TMPL_DIR . "/credstore.pl";
 
 #my @esxi_ip	= ('10.0.0.1', '10.0.0.2');		# ESXi IP address
 #my @esxi_pw	= ('cluster-0', '(none)');		# ESXi root password
 #my @vma_hn	= ('vma1', 'vma2');			# vMA hostname
 #my @vma_ip	= ('10.0.0.21', '10.0.0.22');		# vMA IP address
+#my @vma_pw	= ('cluster-0', 'cluster-0');		# vMA vi-admin password
 #my $dsname	= "iSCSI";				# iSCSI Datastore
 #my $vmhba	= "vmhba33";				# iSCSI Software Adapter
 
 # Development environment
 my @esxi_ip	= ('192.168.137.51', '192.168.137.52');		# ESXi IP address
-my @esxi_pw	= ('cluster-0', '(none)');			# ESXi root password
+my @esxi_pw	= ('cluster-0', 'cluster-0');			# ESXi root password
 my @vma_hn	= ('vma1', 'vma2');				# vMA hostname
 my @vma_ip	= ('192.168.137.205', '192.168.137.206');	# vMA IP address
+my @vma_pw	= ('cluster-0', 'cluster-0');			# vMA vi-admin password
 my $dsname	= "iSCSI";					# iSCSI Datastore
 my $vmhba	= "vmhba33";					# iSCSI Software Adapter
 
@@ -43,6 +47,7 @@ my $vmhba	= "vmhba33";					# iSCSI Software Adapter
 #my @esxi_pw	= ('(none)', '(none)'); 	# ESXi root password
 #my @vma_hn	= ('(none)', '(none)'); 	# vMA hostname
 #my @vma_ip	= ('0.0.0.0', '0.0.0.0');	# vMA IP address
+#my @vma_pw	= ('(none)', '(none)');		# vMA vi-admin password
 #my $dsname	= "iSCSI";			# iSCSI Datastore
 #my $vmhba	= "vmhba33";			# iSCSI Software Adapter
 
@@ -239,6 +244,50 @@ sub DelNode {
 }
 
 sub Save {
+
+	#
+	# Saving credstoreadmin_.pl script
+	#
+	open(IN, "$TMPL_DIR/credstore.pl") or die;
+	open(OUT,"> $CFG_CRED") or die;
+	while (<IN>) {
+		#print "[D<] $_" if /%%/;
+
+		#if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+		#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+		#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+		if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+		#if (/%%VMA1%%/)	{ s/$&/$vma_ip[0]/;}
+		#if (/%%VMA2%%/)	{ s/$&/$vma_ip[1]/;}
+		if (/%%VMKPW1%%/)	{ s/$&/$esxi_pw[0]/;}
+		if (/%%VMKPW2%%/)	{ s/$&/$esxi_pw[1]/;}
+
+		#print "[D ] $_";
+		print OUT;
+	}
+	close(OUT);
+	close(IN);
+
+	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] $CFG_CRED $vma_ip[0]:/tmp");
+	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[1] $CFG_CRED $vma_ip[1]:/tmp");
+
+	&execution(".\\putty    -l vi-admin -pw $vma_pw[0] $vma_ip[0] -m credstore.sh");
+	&execution(".\\putty    -l vi-admin -pw $vma_pw[1] $vma_ip[1] -m credstore.sh");
+
+	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0]:/tmp/id_rsa.pub .\\id_rsa0.pub");
+	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[1] $vma_ip[1]:/tmp/id_rsa.pub .\\id_rsa1.pub");
+
+	&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa0.pub $esxi_ip[0]:/tmp/id_rsa0.pub");
+	&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa1.pub $esxi_ip[0]:/tmp/id_rsa1.pub");
+
+	&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa0.pub $esxi_ip[1]:/tmp/id_rsa0.pub");
+	&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa1.pub $esxi_ip[1]:/tmp/id_rsa1.pub");
+
+	&execution(".\\putty    -l root -pw $esxi_pw[0] $esxi_ip[0] -m sshmk.sh");
+	&execution(".\\putty    -l root -pw $esxi_pw[1] $esxi_ip[1] -m sshmk.sh");
+
+	##
 	my @VM = ();
 
 	#
@@ -384,11 +433,13 @@ sub menu {
 		'set ESXi#1 IP            : ' . $esxi_ip[0],
 		'set ESXi#2 IP            : ' . $esxi_ip[1],
 		'set ESXi#1 root password : ' . $esxi_pw[0],
-#		'set ESXi#2 root password : ' . $esxi_pw[1],
+		'set ESXi#2 root password : ' . $esxi_pw[1],
 		'set vMA#1 hostname       : ' . $vma_hn[0],
 		'set vMA#2 hostname       : ' . $vma_hn[1],
 		'set vMA#1 IP             : ' . $vma_ip[0],
 		'set vMA#2 IP             : ' . $vma_ip[1],
+		'set vMA#1 vi-admin passwd: ' . $vma_pw[0],
+		'set vMA#2 vi-admin passwd: ' . $vma_pw[1],
 		'set iSCSI Datastore name : ' . $dsname,
 		'set iSCSI Adapter name   : ' . $vmhba,
 		'add VM',
@@ -591,6 +642,30 @@ sub showVM {
 			print "\t[" . $i++ . "]\t$1\n";
 		}
 	}
+}
+
+#-------------------------------------------------------------------------------
+sub execution {
+	my $cmd = shift;
+	&Log("[D] executing [$cmd]\n");
+	open(my $h, "$cmd 2>&1 |") or die "[E] execution [$cmd] failed [$!]";
+	while(<$h>){
+		chomp;
+		&Log("[D]	$_\n");
+	}
+	#@lines = <$h>;
+	close($h);
+	&Log(sprintf("[D] result ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
+	return $?;
+}
+#-------------------------------------------------------------------------------
+sub Log{
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	$year += 1900;
+	$mon += 1;
+	my $date = sprintf "%d/%02d/%02d %02d:%02d:%02d", $year, $mon, $mday, $hour, $min, $sec;
+	print "$date $_[0]";
+	return 0;
 }
 
 ##
