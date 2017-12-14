@@ -115,6 +115,9 @@ sub AddNode {
 		"				<logrotate><use>1</use></logrotate>",
 		"			</parameters>",
 		"			<act><retry>2</retry></act>\n",
+		"			<deact>\n",
+		"				<action>5</action>\n",
+		"			</deact>\n",
 		"		</exec>\n"
 	);
 	for($i = $#lines; $i > 0; $i--){
@@ -675,7 +678,7 @@ sub execution {
 	&Log("[D] executing [$cmd]\n");
 	open(my $h, "$cmd 2>&1 |") or die "[E] execution [$cmd] failed [$!]";
 	while(<$h>){
-		push (@lines, $_);
+		#push (@lines, $_);
 		print;
 		#chomp;
 		#&Log("[D]	$_\n");
