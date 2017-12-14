@@ -246,8 +246,10 @@ sub DelNode {
 sub Save {
 
 	#
-	# Saving credstoreadmin_.pl script
+	# Setup Authentication
 	#
+
+	# script for credstoreadmin.pl on vMA
 	open(IN, "$TMPL_DIR/credstore.pl") or die;
 	open(OUT,"> $CFG_CRED") or die;
 	while (<IN>) {
@@ -269,21 +271,44 @@ sub Save {
 	close(OUT);
 	close(IN);
 
+	# execution file for credstore.pl copied on vMA
+	for (my $i = 0; $i < 2; $i++) {
+		open(IN, "$TMPL_DIR/credstore.sh") or die;
+		open(OUT,"> credstore_$i.sh") or die;
+		while (<IN>) {
+			if (/%%VMAPW%%/)	{ s/$&/$vma_pw[$i]/;}
+			if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+			if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+			print OUT;
+		}
+		close(OUT);
+		close(IN);
+	}
+
+	# copy credstore_.pl
+	##
+	## Need to delete
+	##	vMA*:/tmp/credstore_.pl
+	##	credstore_*.sh
+	##	id_rsa*.pub
+	
 	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] $CFG_CRED $vma_ip[0]:/tmp");
 	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[1] $CFG_CRED $vma_ip[1]:/tmp");
 
-	&execution(".\\putty    -l vi-admin -pw $vma_pw[0] $vma_ip[0] -m credstore.sh");
-	&execution(".\\putty    -l vi-admin -pw $vma_pw[1] $vma_ip[1] -m credstore.sh");
+	# Access to vMA and execute credstore_admin.pl
+	&execution(".\\putty    -l vi-admin -pw $vma_pw[0] $vma_ip[0] -m credstore_0.sh");
+	&execution(".\\putty    -l vi-admin -pw $vma_pw[1] $vma_ip[1] -m credstore_1.sh");
 
+	# Get ssh public keys and put them to ESXis
 	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0]:/tmp/id_rsa.pub .\\id_rsa0.pub");
 	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[1] $vma_ip[1]:/tmp/id_rsa.pub .\\id_rsa1.pub");
 
 	&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa0.pub $esxi_ip[0]:/tmp/id_rsa0.pub");
 	&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa1.pub $esxi_ip[0]:/tmp/id_rsa1.pub");
-
 	&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa0.pub $esxi_ip[1]:/tmp/id_rsa0.pub");
 	&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa1.pub $esxi_ip[1]:/tmp/id_rsa1.pub");
 
+	# Access to ESXi and make /etc/ssh/keys-root/authorized_keys
 	&execution(".\\putty    -l root -pw $esxi_pw[0] $esxi_ip[0] -m sshmk.sh");
 	&execution(".\\putty    -l root -pw $esxi_pw[1] $esxi_ip[1] -m sshmk.sh");
 
@@ -650,10 +675,11 @@ sub execution {
 	&Log("[D] executing [$cmd]\n");
 	open(my $h, "$cmd 2>&1 |") or die "[E] execution [$cmd] failed [$!]";
 	while(<$h>){
-		chomp;
-		&Log("[D]	$_\n");
+		push (@lines, $_);
+		print;
+		#chomp;
+		#&Log("[D]	$_\n");
 	}
-	#@lines = <$h>;
 	close($h);
 	&Log(sprintf("[D] result ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
 	return $?;
