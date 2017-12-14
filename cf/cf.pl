@@ -315,8 +315,7 @@ sub Save {
 	&execution(".\\putty    -l root -pw $esxi_pw[0] $esxi_ip[0] -m sshmk.sh");
 	&execution(".\\putty    -l root -pw $esxi_pw[1] $esxi_ip[1] -m sshmk.sh");
 
-	##
-	my @VM = ();
+	&execution("del credstore* id_rsa*");
 
 	#
 	# Making directry for Group and Monitor resource
@@ -328,7 +327,6 @@ sub Save {
 	foreach (@lines){
 		if (/<group name=\"failover-(.*)\">/) {
 			#print "[D] $1\n";
-			push @VM, $1;
 			push @DIR, "$CFG_DIR/scripts/failover-$1";
 			push @DIR, "$CFG_DIR/scripts/failover-$1/exec-$1";
 			push @DIR, "$CFG_DIR/scripts/monitor.s/genw-$1";
