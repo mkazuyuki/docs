@@ -295,27 +295,25 @@ sub Save {
 	##	credstore_*.sh
 	##	id_rsa*.pub
 	
-	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] $CFG_CRED $vma_ip[0]:/tmp");
-	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[1] $CFG_CRED $vma_ip[1]:/tmp");
+	for (my $i = 0; $i<2; $i++){
+		# Put credstore controlling script to vMA
+		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $CFG_CRED $vma_ip[$i]:/tmp");
 
-	# Access to vMA and execute credstore_admin.pl
-	&execution(".\\putty    -l vi-admin -pw $vma_pw[0] $vma_ip[0] -m credstore_0.sh");
-	&execution(".\\putty    -l vi-admin -pw $vma_pw[1] $vma_ip[1] -m credstore_1.sh");
+		# Access to vMA and execute credstore_admin.pl
+		&execution(".\\putty    -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
 
-	# Get ssh public keys and put them to ESXis
-	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0]:/tmp/id_rsa.pub .\\id_rsa0.pub");
-	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[1] $vma_ip[1]:/tmp/id_rsa.pub .\\id_rsa1.pub");
+		# Get ssh public key from vMA
+		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i]:/tmp/id_rsa.pub .\\id_rsa$i.pub");
 
-	&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa0.pub $esxi_ip[0]:/tmp/id_rsa0.pub");
-	&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa1.pub $esxi_ip[0]:/tmp/id_rsa1.pub");
-	&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa0.pub $esxi_ip[1]:/tmp/id_rsa0.pub");
-	&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa1.pub $esxi_ip[1]:/tmp/id_rsa1.pub");
+		# Put ssh public key to ESXi
+		&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa$i.pub $esxi_ip[0]:/tmp");
+		&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa$i.pub $esxi_ip[1]:/tmp");
 
-	# Access to ESXi and make /etc/ssh/keys-root/authorized_keys
-	&execution(".\\putty    -l root -pw $esxi_pw[0] $esxi_ip[0] -m sshmk.sh");
-	&execution(".\\putty    -l root -pw $esxi_pw[1] $esxi_ip[1] -m sshmk.sh");
+		# Access to ESXi and make /etc/ssh/keys-root/authorized_keys
+		&execution(".\\putty    -l root -pw $esxi_pw[$i] $esxi_ip[$i] -m $TMPL_DIR/sshmk.sh");
 
-	&execution("del credstore* id_rsa*");
+		&execution("del credstore_$i.sh id_rsa$i.pub");
+	}
 
 	#
 	# Making directry for Group and Monitor resource
@@ -507,6 +505,9 @@ sub select {
 	elsif ( $menu_vMA[$i] =~ /set vMA#([1,2]) IP/ ) {
 		&setvMAIP($1);
 	}
+	elsif ( $menu_vMA[$i] =~ /set vMA#([1..2]) vi-admin passwd/ ) {
+		&setvMAPwd($1);
+	}
 	elsif ( $menu_vMA[$i] =~ /set iSCSI Datastore name/ ) {
 		&setDatastoreName;
 	}
@@ -565,6 +566,16 @@ sub setvMAIP{
 	chomp $ret;
 	if ($ret ne "") {
 		$vma_ip[$i] = $ret;
+	}
+}
+
+sub setvMAPwd{
+	my $i = $_[0] - 1;
+	print "[" . $vma_pw[$i] . "] > ";
+	$ret = <STDIN>;
+	chomp $ret;
+	if ($ret ne "") {
+		$vma_pw[$i] = $ret;
 	}
 }
 
