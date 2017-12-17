@@ -1,5 +1,5 @@
 --------
-★	root login が lock down されると、after.local が 
+★	ESXi への root login が lock down されると、after.local が 
 
 		esxcli --server $vmk storage filesystem list | cut -d' ' -f3 | grep $DatastoreName
 
@@ -21,7 +21,7 @@
 
 ** after.local 消そう! **
 
-＃ howto-extend-md-resource.md
+# howto-extend-md-resource.md
 	
 	idisk.img の拡張方法 要調査
 
@@ -29,18 +29,20 @@
 
 # ESXi ホストの I/O (DK/NW)監視処理 を考慮する
 
-# targetclit は抜ける前に cd / が必要
+# targetcli は抜ける前に cd / が必要
 
 # 両ESXi の 「ポートグループのプロパティ」 > 「ネットワークラベル」 は同じ名前に設定すること。
 ネットワークラベルが異なると、UCVM の 「ネットワーク アダプタ N」の「ネットワーク接続」が FO 後に空欄となり、通信不能に陥る。
 
-# UCVM起動にリトライを入れること
-  inventory への VM register が invalid な VM を登録した場合、電源ON で そんなVMはない と失敗する
-  vm-start.pl は対策済みなので、 FOGかexecリソースの活性リトライで救う必要がある。
-
 # VM インベントリ登録、起動失敗時のメッセージを全部ログに出すこと。
   (先頭1行のみログ出力となっているパタンがある。ライセンス切れを起こしたとき、ログからわかるようにする意図)
 
-# genw-remote-node.pl のために、vMA VM の名前は以下のようになる必要がある。
+# genw-remote-node.pl のために、vSphere Client のインベントリ上のvMA VM の名前は以下のようになる必要がある。
 	'vSphere Management Assistant (vMA)01'
 	'vSphere Management Assistant (vMA)02'
+
+#done
+# 2017.12.17 UC VM起動にリトライを入れること
+  inventory への VM register が invalid な VM を登録した場合、電源ON で そんなVMはない と失敗する
+  vm-start.pl は対策済みなので、 FOGかexecリソースの活性リトライで救う必要がある。
+
