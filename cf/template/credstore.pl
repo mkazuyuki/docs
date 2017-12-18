@@ -37,6 +37,7 @@ sub execution {
 		#chomp;
 		#&Log("[D]	$_\n");
 		print;
+		push @lines, $_;
 	}
 	#@lines = <$h>;
 	close($h);
