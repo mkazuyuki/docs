@@ -17,7 +17,7 @@ my $vmcmd = 'vmware-cmd.pl';
 my $CFG_DIR	= "conf";
 my $CFG_FILE	= $CFG_DIR . "/clp.conf";
 my $CFG_CRED	= "credstore_.pl";
-
+my $SCRIPT_DIR	= "script";
 my $TMPL_DIR	= "template";
 my $TMPL_CONF	= $TMPL_DIR . "/clp.conf";
 my $TMPL_START	= $TMPL_DIR . "/vm-start.pl";
@@ -39,6 +39,8 @@ my @esxi_pw	= ('cluster-0', 'cluster-0');			# ESXi root password
 my @vma_hn	= ('vma1', 'vma2');				# vMA hostname
 my @vma_ip	= ('192.168.137.205', '192.168.137.206');	# vMA IP address
 my @vma_pw	= ('cluster-0', 'cluster-0');			# vMA vi-admin password
+my @iscsi_ip	= ('192.168.137.11', '192.168.137.12'); 	# vMA IP address
+my @iscsi_pw	= ('cluster-0', 'cluster-0');			# vMA vi-admin password
 my $dsname	= "iSCSI";					# iSCSI Datastore
 my $vmhba	= "vmhba33";					# iSCSI Software Adapter
 
@@ -253,7 +255,7 @@ sub Save {
 	#
 
 	# script for credstoreadmin.pl on vMA
-	open(IN, "$TMPL_DIR/credstore.pl") or die;
+	open(IN, "$SCRIPT_DIR/credstore.pl") or die;
 	open(OUT,"> $CFG_CRED") or die;
 	while (<IN>) {
 		#print "[D<] $_" if /%%/;
@@ -276,7 +278,7 @@ sub Save {
 
 	# execution file for credstore.pl copied on vMA
 	for (my $i = 0; $i < 2; $i++) {
-		open(IN, "$TMPL_DIR/credstore.sh") or die;
+		open(IN, "$SCRIPT_DIR/credstore.sh") or die;
 		open(OUT,"> credstore_$i.sh") or die;
 		while (<IN>) {
 			if (/%%VMAPW%%/)	{ s/$&/$vma_pw[$i]/;}
@@ -287,6 +289,17 @@ sub Save {
 		close(OUT);
 		close(IN);
 	}
+
+	# execution file for ssh-keyscna on iscsi
+	open(IN, "$SCRIPT_DIR/ssh-keyscan.sh") or die;
+	open(OUT,"> ssh-keyscan.sh") or die;
+	while (<IN>) {
+		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+		if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+		print OUT;
+	}
+	close(OUT);
+	close(IN);
 
 	# copy credstore_.pl
 	##
@@ -300,20 +313,30 @@ sub Save {
 		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $CFG_CRED $vma_ip[$i]:/tmp");
 
 		# Access to vMA and execute credstore_admin.pl
-		&execution(".\\putty    -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
+		&execution(".\\putty.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
 
-		# Get ssh public key from vMA
-		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i]:/tmp/id_rsa.pub .\\id_rsa$i.pub");
+		# Configure known_hosts file on iscsi
+		&execution(".\\putty.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] -m ssh-keyscan.sh");
+
+		# Get ssh public key from vMA, iSCSI
+		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i]:/tmp/id_rsa.pub .\\id_rsa_vma_$i.pub");
+		&execution(".\\pscp.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i]:/root/.ssh/id_rsa.pub .\\id_rsa_iscsi_$i.pub");
 
 		# Put ssh public key to ESXi
-		&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa$i.pub $esxi_ip[0]:/tmp");
-		&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa$i.pub $esxi_ip[1]:/tmp");
+		&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa_vma_$i.pub $esxi_ip[0]:/tmp");
+		&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa_vma_$i.pub $esxi_ip[1]:/tmp");
+		&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa_iscsi_$i.pub $esxi_ip[0]:/tmp");
+		&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa_iscsi_$i.pub $esxi_ip[1]:/tmp");
 
-		# Access to ESXi and make /etc/ssh/keys-root/authorized_keys
-		&execution(".\\putty    -l root -pw $esxi_pw[$i] $esxi_ip[$i] -m $TMPL_DIR/sshmk.sh");
-
-		&execution("del credstore_$i.sh id_rsa$i.pub");
+		&execution("del credstore_$i.sh id_rsa$i.pub id_rsa_iscsi_$i.pub");
 	}
+
+	for (my $i = 0; $i<2; $i++){
+		# Access to ESXi and make /etc/ssh/keys-root/authorized_keys
+		&execution(".\\putty.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] -m $SCRIPT_DIR/sshmk.sh");
+	}
+
+	&execution("del $CFG_CRED ssh-keyscan.sh");
 
 	#
 	# Making directry for Group and Monitor resource
@@ -464,6 +487,10 @@ sub menu {
 		'set vMA#2 IP             : ' . $vma_ip[1],
 		'set vMA#1 vi-admin passwd: ' . $vma_pw[0],
 		'set vMA#2 vi-admin passwd: ' . $vma_pw[1],
+		'set iSCSI#1 IP           : ' . $iscsi_ip[0],
+		'set iSCSI#2 IP           : ' . $iscsi_ip[1],
+		'set iSCSI#1 root password: ' . $iscsi_pw[0],
+		'set iSCSI#2 root password: ' . $iscsi_pw[1],
 		'set iSCSI Datastore name : ' . $dsname,
 		'set iSCSI Adapter name   : ' . $vmhba,
 		'add VM',
@@ -507,6 +534,12 @@ sub select {
 	}
 	elsif ( $menu_vMA[$i] =~ /set vMA#([1..2]) vi-admin passwd/ ) {
 		&setvMAPwd($1);
+	}
+	elsif ( $menu_vMA[$i] =~ /set iSCSI#([1,2]) IP/ ) {
+		&setiSCSIIP($1);
+	}
+	elsif ( $menu_vMA[$i] =~ /set iSCSI#([1..2]) root password/ ) {
+		&setiSCSIPwd($1);
 	}
 	elsif ( $menu_vMA[$i] =~ /set iSCSI Datastore name/ ) {
 		&setDatastoreName;
@@ -576,6 +609,26 @@ sub setvMAPwd{
 	chomp $ret;
 	if ($ret ne "") {
 		$vma_pw[$i] = $ret;
+	}
+}
+
+sub setiSCSIIP{
+	my $i = $_[0] - 1;
+	print "[" . $iscsi_ip[$i] . "] > ";
+	$ret = <STDIN>;
+	chomp $ret;
+	if ($ret ne "") {
+		$iscsi_ip[$i] = $ret;
+	}
+}
+
+sub setiSCSIPwd{
+	my $i = $_[0] - 1;
+	print "[" . $iscsi_pw[$i] . "] > ";
+	$ret = <STDIN>;
+	chomp $ret;
+	if ($ret ne "") {
+		$iscsi_pw[$i] = $ret;
 	}
 }
 
