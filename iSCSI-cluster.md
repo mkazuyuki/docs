@@ -58,7 +58,7 @@ ESXi hosts
 | FIP for iSCSI Target     | 192.168.0.10		   |
 | Cluster Partition	   | /dev/sdb1			   |
 | Data Partition	   | /dev/sdb2			   |
-| WWN of iSCSI Target	   | iqn.2016-10.com.ec:1          |
+| WWN of iSCSI Target	   | iqn.1996-10.com.expresscluster:1 |
 | WWN of iSCSI Initiator 1 | iqn.1998-01.com.vmware:1      |
 | WWN of iSCSI Initiator 2 | iqn.1998-01.com.vmware:2      |
 

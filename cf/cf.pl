@@ -2,11 +2,17 @@
 
 #
 # This script creates ECX configuration files (clp.conf and scripts)
-#
+# and configurs password free access from iSCSI and vMA hosts to ESXi hosts
+# 
 # Prerequisite package
+#
 #	VMware-vSphere-CLI-6.0.0-3561779.exe
 #		https://my.vmware.com/jp/web/vmware/details?productId=491&downloadGroup=VCLI60U2
 #
+#	putty.exe , pscp.exe
+#		https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
+#			https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe
+#			https://the.earth.li/~sgtatham/putty/latest/w64/pscp.exe
 
 use strict;
 use Cwd;
