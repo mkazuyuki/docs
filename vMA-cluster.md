@@ -38,6 +38,10 @@ This text descrives how to create vMA (vSphere Management Assisant) cluster on E
 		| 3) Hostname	| vma1		| vma2		| need to be independent hostname ( "localhost" is inappropriate ) |
 		| 6) IP Address	| 10.0.0.21	| 10.0.0.22	| need to be independent static IP Address |
 
+      The netowrk of vMA is (re)configured by the command
+
+     		> sudo /opt/vmare/vma/bin/vmware-vma-netconf.pl 
+
     The IP address of vma1 and vma2 should be possible to communicate with VMkernel port of both ESXi and VM(s) to be monitored.
 
     - VM to be controlled:
