@@ -1,48 +1,50 @@
 --------
-��	ESXi �ւ� root login �� lock down �����ƁAafter.local �� 
+★	ESXi への root login が lock down されると、after.local が 
 
 		esxcli --server $vmk storage filesystem list | cut -d' ' -f3 | grep $DatastoreName
 
-	�Ŗ������[�v����B
-	VM�̋N���X�N���v�g�� ������VM����������A�X�g���[�W�Ƃ̐ڑ��m�F���s���悤�ɂ�������A
-	after.local ���v��Ȃ��Ȃ��Ă���\��������̂ŁA�m�F���邱�ƁB
+	で無限ループする。
+	VMの起動スクリプトで 無効なVMを消したり、ストレージとの接続確認を行うようにしたから、
+	after.local が要らなくなっている可能性があるので、確認すること。
 
-->	after.local ������Ă��邱��
-		- Surprise PowerOff > PowerOn �� ESXi ��(������)VM�o�^���c��ւ̑΍���Ӑ}����
-			- invalid VM �̍폜
-			- iSCSI Datastore �ɓ����Ă��āA���AESXi �ɓo�^����Ă��� VM �̓d���f > �o�^�폜
+->	after.local がやっていること
+		- Surprise PowerOff > PowerOn で ESXi に(無効な)VM登録が残るへの対策を意図して
+			- invalid VM の削除
+			- iSCSI Datastore に入っていて、かつ、ESXi に登録されている VM の電源断 > 登録削除
 
-	start.sh (vm-start.pl) ������Ă��邱��
-		- iSCSI Datastore ��������Ȃ���΁Avmhba �����X�L�������� iSCSI�ڑ��𑣂�
-		- invalid VM �̍폜�͓o�^���������s�����ꍇ�ɍs���B
+	start.sh (vm-start.pl) がやっていること
+		- iSCSI Datastore が見つからなければ、vmhba をリスキャンして iSCSI接続を促す
+		- invalid VM の削除は登録処理が失敗した場合に行う。
 
 
-	vMA VM �� panic > boot���鎞�Ȃǂ� after.logcal ���u�����Ă���Œ��� VM ���~�߂Ă��܂��P�[�X�v�����肻���B
+	vMA VM が panic > bootする時などに after.logcal が「走っている最中の VM を止めてしまうケース」がありそう。
 
-** after.local ������! **
+** after.local 消そう! **
 
 # howto-extend-md-resource.md
 	
-	idisk.img �̊g�����@ �v����
+	idisk.img の拡張方法 要調査
 
-# before.local �̐����� ESX-Host-Cluster-QSG �ɋL�ڂ���
+# before.local の説明を ESX-Host-Cluster-QSG に記載する
 
-# ESXi �z�X�g�� I/O (DK/NW)�Ď����� ���l������
+# ESXi ホストの I/O (DK/NW)監視処理 を考慮する
 
-# targetcli �͔�����O�� cd / ���K�v
+# targetcli は抜ける前に cd / が必要
 
-# ��ESXi �� �u�|�[�g�O���[�v�̃v���p�e�B�v > �u�l�b�g���[�N���x���v �͓������O�ɐݒ肷�邱�ƁB
-�l�b�g���[�N���x�����قȂ�ƁAUCVM �� �u�l�b�g���[�N �A�_�v�^ N�v�́u�l�b�g���[�N�ڑ��v�� FO ��ɋ󗓂ƂȂ�A�ʐM�s�\�Ɋׂ�B
+# 両ESXi の 「ポートグループのプロパティ」 > 「ネットワークラベル」 は同じ名前に設定すること。
+ネットワークラベルが異なると、UCVM の 「ネットワーク アダプタ N」の「ネットワーク接続」が FO 後に空欄となり、通信不能に陥る。
 
-# VM �C���x���g���o�^�A�N�����s���̃��b�Z�[�W��S�����O�ɏo�����ƁB
-  (�擪1�s�̂݃��O�o�͂ƂȂ��Ă���p�^��������B���C�Z���X�؂���N�������Ƃ��A���O����킩��悤�ɂ���Ӑ})
+# VM インベントリ登録、起動失敗時のメッセージを全部ログに出すこと。
+  (先頭1行のみログ出力となっているパタンがある。ライセンス切れを起こしたとき、ログからわかるようにする意図)
 
-# genw-remote-node.pl �̂��߂ɁAvSphere Client �̃C���x���g�����vMA VM �̖��O�͈ȉ��̂悤�ɂȂ�K�v������B
+# genw-remote-node.pl のために、vSphere Client のインベントリ上のvMA VM の名前は以下のようになる必要がある。
 	'vSphere Management Assistant (vMA)01'
 	'vSphere Management Assistant (vMA)02'
 
+# UCVM は iSCSI Target と同じ ESXi で稼働するように cf.pl を exec-vm-datastore.sh も自動構成するよう修正する。
+
 #done
-# 2017.12.17 UC VM�N���Ƀ��g���C�����邱��
-  inventory �ւ� VM register �� invalid �� VM ��o�^�����ꍇ�A�d��ON �� �����VM�͂Ȃ� �Ǝ��s����
-  vm-start.pl �͑΍�ς݂Ȃ̂ŁA FOG��exec���\�[�X�̊������g���C�ŋ~���K�v������B
+# 2017.12.17 UC VM起動にリトライを入れること
+  inventory への VM register が invalid な VM を登録した場合、電源ON で そんなVMはない と失敗する
+  vm-start.pl は対策済みなので、 FOGかexecリソースの活性リトライで救う必要がある。
 

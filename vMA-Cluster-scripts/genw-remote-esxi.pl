@@ -99,7 +99,7 @@ sub Monitor{
 		}
 		elsif ($a =~ /^Skipping invalid VM '(\d.+)'/){
 			push(@vmiv, $1);
-			&Log("[I] on LOCAL  [$vmk] VM ID [$1] exists as inavalid VM\n");
+			&Log("[I] on LOCAL  [$vmk] VM ID [$1] exists as invalid VM\n");
 		}
 	}
 
