@@ -96,10 +96,10 @@ sub Monitor{
 		&Log("[I] [$vmname]\tGuest OS is responding normally.\n");
 		return 0;
 	} elsif ($ret == 5) {
-		&Log("[W] [$vmname]\tIntermittent heartbeat. There might be a problem with the guest operating system.\n");
+		&Log("[W] [$vmname]\tIntermittent heartbeat. There might be a problem with the guest OS.\n");
 		return 0;
 	} elsif ($ret == 100) {
-		&Log("[E] [$vmname]xi\tNo heartbeat. Guest operation system might have stopped responding.\n");
+		&Log("[E] [$vmname]\tNo heartbeat. Guest OS might have stopped responding.\n");
 		return -1;
 	}
 }

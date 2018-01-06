@@ -37,9 +37,7 @@ if ($? == 0) {
 }
 my $vmcmd = "/usr/bin/vmware-cmd --server $vmk --username root";
 $ENV{"HOME"} = "/root";
-#&Log("[I] [$vmcmd][" . $ENV{"HOME"} ."]\n");
-my $cfg_path = "";
-my @lines = ();
+
 # VM execution state map
 my %state = (
 	"VM_EXECUTION_STATE_ON" => "on",
@@ -52,13 +50,14 @@ my %state = (
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
+my $cfg_path = "";
+my @lines = ();
 my $vmname = "";
 my $r = 0;
 foreach(@cfg_paths){
 	# VMname to be outputted on log.
 	$vmname = $_;
 	$vmname =~ s/^(.*\/)(.*)(\.vmx)/$2/;
-	#system("\"ulimit\" -s unlimited");
 	if (&Monitor($_)){
 		$r = 1;
 	}
@@ -88,7 +87,8 @@ sub Monitor{
 			&Log("[E] [$vmname] at [$vmk] Could not get VM heartbeat count: [$line]\n");
 			if ($line =~ /No virtual machine found./){
 				# Issue failover when VMn active on another ESXi
-				return 1;
+				&Log("[E] [$vmname] at [$vmk] seems disappeared.\n");
+				#return 1;
 			}
 		}
 	}
@@ -106,11 +106,11 @@ sub Monitor{
 		&Log("[I] [$vmname]\tGuest OS is responding normally.\n");
 		return 0;
 	} elsif ($ret == 5) {
-		&Log("[W] [$vmname]\tIntermittent heartbeat. There might be a problem with the guest operating system.\n");
+		&Log("[W] [$vmname]\tIntermittent heartbeat. There might be a problem with the guest OS.\n");
 		return 0;
 	} elsif ($ret == 100) {
-		&Log("[E] [$vmname]xi\tNo heartbeat. Guest operation system might have stopped responding.\n");
-		return -1;
+		&Log("[E] [$vmname]\tNo heartbeat. Guest OS might have stopped responding.\n");
+		#return -1;
 	}
 
 	if (&IsPoweredOn()){
