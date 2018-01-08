@@ -110,7 +110,7 @@ sub Monitor{
 #			"vim-cmd vmsvc/unregister \\\$a 2>&1\;done\"";
 
 	foreach (@vmiv){
-		$cmd = "ssh -i ~/.ssh/id_rsa $vmk \"vim-cmd vmsvc/unregister $_ 2>&1\;done\"";
+		$cmd = "ssh -i ~/.ssh/id_rsa $vmk \"vim-cmd vmsvc/unregister $_ 2>&1\"";
 		&execution($cmd);
 		foreach $b (@lines){
 			chomp $b;
@@ -156,7 +156,7 @@ sub Monitor{
 					}
 				}
 				if ($tmp) {
-					$cmd = "ssh -i ~/.ssh/id_rsa $vmk \"vim-cmd vmsvc/unregister $a 2>&1\;done\"";
+					$cmd = "ssh -i ~/.ssh/id_rsa $vmk \"vim-cmd vmsvc/unregister $a 2>&1\"";
 					&execution($cmd);
 					foreach(@lines){
 						chomp;
