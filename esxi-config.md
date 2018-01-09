@@ -3,6 +3,34 @@
 - The network for iSCSI and Data Mirroring should use physically indepenent netowrk if possible. Configure logically independent at least.
 - Add VMkernel port for iSCSI communication.
 - Try to invalidate TSO, LRO and Jumbo Frame if iSCSI performance is not enough.
+
+	- Disabling TSO (TCP Segmentation Offload), LRO (Large Receive Offload)
+
+		-ESXiA
+
+				[root@localhost:~] esxcli system settings advanced list -o /Net/UseHwTSO
+				   Path: /Net/UseHwTSO
+				   Type: integer
+				   Int Value: 1
+				   Default Int Value: 1
+				   Min Value: 0
+				   Max Value: 1
+				   String Value:
+				   Default String Value:
+				   Valid Characters:
+				   Description: When non-zero, use pNIC HW TSO offload if available
+				[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO -i 0
+				[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO6 -i 0
+				[root@localhost:~] esxcli system settings advanced set -o /Net/TcpipDefLROEnabled -i 0
+				[root@localhost:~]
+
+		-ESXiB
+
+				[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO -i 0
+				[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO6 -i 0
+				[root@localhost:~] esxcli system settings advanced set -o /Net/TcpipDefLROEnabled -i 0
+				[root@localhost:~]
+
 - Configure ssh service to start automatically when ESXi start.
 
 
