@@ -8,31 +8,30 @@
 
 		-ESXiA
 
-				[root@localhost:~] esxcli system settings advanced list -o /Net/UseHwTSO
-				   Path: /Net/UseHwTSO
-				   Type: integer
-				   Int Value: 1
-				   Default Int Value: 1
-				   Min Value: 0
-				   Max Value: 1
-				   String Value:
-				   Default String Value:
-				   Valid Characters:
-				   Description: When non-zero, use pNIC HW TSO offload if available
-				[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO -i 0
-				[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO6 -i 0
-				[root@localhost:~] esxcli system settings advanced set -o /Net/TcpipDefLROEnabled -i 0
-				[root@localhost:~]
+			[root@localhost:~] esxcli system settings advanced list -o /Net/UseHwTSO
+			   Path: /Net/UseHwTSO
+			   Type: integer
+			   Int Value: 1
+			   Default Int Value: 1
+			   Min Value: 0
+			   Max Value: 1
+			   String Value:
+			   Default String Value:
+			   Valid Characters:
+			   Description: When non-zero, use pNIC HW TSO offload if available
+			[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO -i 0
+			[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO6 -i 0
+			[root@localhost:~] esxcli system settings advanced set -o /Net/TcpipDefLROEnabled -i 0
+			[root@localhost:~]
 
 		-ESXiB
 
-				[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO -i 0
-				[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO6 -i 0
-				[root@localhost:~] esxcli system settings advanced set -o /Net/TcpipDefLROEnabled -i 0
-				[root@localhost:~]
+			[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO -i 0
+			[root@localhost:~] esxcli system settings advanced set -o /Net/UseHwTSO6 -i 0
+			[root@localhost:~] esxcli system settings advanced set -o /Net/TcpipDefLROEnabled -i 0
+			[root@localhost:~]
 
 - Configure ssh service to start automatically when ESXi start.
-
 
 - genw-remote-node in vMA Cluster periodically executes "power on" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally shutdown the vMA VM
 - genw-remote-node in vMA Cluster periodically executes "starting cluster service" for another vMA VM. And so, "suspend" the genw-remote-node before when intentionally stop the cluster service.
