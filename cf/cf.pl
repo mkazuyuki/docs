@@ -321,7 +321,7 @@ sub Save {
 		# Access to vMA and execute credstore_admin.pl
 		&execution(".\\putty.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
 
-		# Configure known_hosts file on iscsi
+		# Configure id_rsa.pub and known_hosts file on iscsi
 		&execution(".\\putty.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] -m ssh-keyscan.sh");
 
 		# Get ssh public key from vMA, iSCSI
