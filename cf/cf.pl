@@ -254,7 +254,45 @@ sub DelNode {
 	}
 }
 
+#
+# Setup before.local and after.local on vMA hosts
+#
+sub putInitScripts {
+	my @locals = ("before.local", "after.local");
+	for (my $n = 0; $n < 2; $n++) {
+		foreach my $file (@locals) {
+			open(IN, "$TMPL_DIR/$file") or die;
+			open(OUT,">  $file") or die;
+			while (<IN>) {
+				if (/%%VMK%%/)		{ s/$&/$esxi_ip[$n]/;}
+				if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+				print OUT;
+			}
+			close(OUT);
+			close(IN);
+			&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$n] $file $vma_ip[$n]:/tmp");
+			unlink ( "$file" ) or die;
+		}
+
+		my $file = "vma-init-files.sh";
+		open(IN, "$SCRIPT_DIR/$file") or die;
+		open(OUT,">  $file") or die;
+		while (<IN>) {
+			if (/%%VMAPW%%/)	{ s/$&/$vma_pw[$n]/;}
+			print OUT;
+		}
+		close(OUT);
+		close(IN);
+		&execution(".\\putty.exe -l vi-admin -pw $vma_pw[$n] $vma_ip[$n] -m $file");
+		unlink ( "$file" ) or die;
+	}
+}
+
 sub Save {
+
+	# Setup before.local and after.local on vMA hosts
+	&putInitScripts;
+	return 0;
 
 	#
 	# Setup Authentication
@@ -296,7 +334,7 @@ sub Save {
 		close(IN);
 	}
 
-	# execution file for ssh-keyscna on iscsi
+	# execution file for ssh-keyscan on iscsi
 	open(IN, "$SCRIPT_DIR/ssh-keyscan.sh") or die;
 	open(OUT,"> ssh-keyscan.sh") or die;
 	while (<IN>) {
