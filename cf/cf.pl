@@ -49,6 +49,7 @@ my @iscsi_ip	= ('192.168.137.11', '192.168.137.12'); 	# vMA IP address
 my @iscsi_pw	= ('cluster-0', 'cluster-0');			# vMA vi-admin password
 my $dsname	= "iSCSI";					# iSCSI Datastore
 my $vmhba	= "vmhba33";					# iSCSI Software Adapter
+my @ipw 	= ('192.168.137.201', '192.168.137.202');	# Target of IP Monitor
 
 ## Initial environment
 #my @esxi_ip	= ('0.0.0.0', '0.0.0.0');	# ESXi IP address
@@ -292,7 +293,6 @@ sub Save {
 
 	# Setup before.local and after.local on vMA hosts
 	&putInitScripts;
-	return 0;
 
 	#
 	# Setup Authentication
@@ -346,17 +346,12 @@ sub Save {
 	close(IN);
 
 	# copy credstore_.pl
-	##
-	## Need to delete
-	##	vMA*:/tmp/credstore_.pl
-	##	credstore_*.sh
-	##	id_rsa*.pub
-	
 	for (my $i = 0; $i<2; $i++){
 		# Put credstore controlling script to vMA
 		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $CFG_CRED $vma_ip[$i]:/tmp");
 
 		# Access to vMA and execute credstore_admin.pl
+		# ここで vMA ホスト上の /tmp に root ユーザの id_rsa.pub がコピーされる。後で消すこと。
 		&execution(".\\putty.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
 
 		# Configure id_rsa.pub and known_hosts file on iscsi
@@ -413,6 +408,8 @@ sub Save {
 		if (/%%VMA2%%/)	{ s/$&/$vma_hn[1]/;}
 		if (/%%VMA1IP%%/)	{ s/$&/$vma_ip[0]/;}
 		if (/%%VMA2IP%%/)	{ s/$&/$vma_ip[1]/;}
+		if (/%%IPW1%%/)		{ s/$&/$ipw[0]/;}
+		if (/%%IPW2%%/)		{ s/$&/$ipw[1]/;}
 		#print "[D ] $_";
 		print OUT;
 	}
@@ -537,6 +534,8 @@ sub menu {
 		'set iSCSI#2 root password: ' . $iscsi_pw[1],
 		'set iSCSI Datastore name : ' . $dsname,
 		'set iSCSI Adapter name   : ' . $vmhba,
+		'set IP monitor#1 IP      : ' . $ipw[0],
+		'set IP monitor#2 IP      : ' . $ipw[1],
 		'add VM',
 		'del VM',
 		'show VM'
@@ -590,6 +589,9 @@ sub select {
 	}
 	elsif ( $menu_vMA[$i] =~ /set iSCSI Adapter name/ ) {
 		&setVMHBA;
+	}
+	elsif ( $menu_vMA[$i] =~ /set IP monitor#([1,2]) IP/ ) {
+		&setIPW($1);
 	}
 	elsif ( $menu_vMA[$i] =~ /add VM/ ) {
 		&addVM;
@@ -691,6 +693,16 @@ sub setVMHBA{
 	chomp $ret;
 	if ($ret ne "") {
 		$vmhba = $ret;
+	}
+}
+
+sub setIPW {
+	my $i = $_[0] - 1;
+	print "[" . $ipw[$i] . "] > ";
+	$ret = <STDIN>;
+	chomp $ret;
+	if ($ret ne "") {
+		$ipw[$i] = $ret;
 	}
 }
 
