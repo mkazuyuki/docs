@@ -12,16 +12,16 @@ use strict;
 #-------------------------------------------------------------------------------
 # Configuration
 
-# VM name in the ESXi inventory and IP addresses of the VM
-my $VMNAME1 = 'vSphere Management Assistant (vMA)01';
+# VM Display Name in the ESXi inventory and IP addresses of the VM
+my $VMNAME1	= '%%VMADN1%%';
 my $VMIP1	= "%%VMA1%%";
 
-my $VMNAME2 = 'vSphere Management Assistant (vMA)02';
+my $VMNAME2	= '%%VMADN2%%';
 my $VMIP2	= "%%VMA2%%";
 
 # IP address of VMKernel port
 my $VMK1	= "%%VMK1%%";
-my $VMK2	= "%%VMK2%%";;
+my $VMK2	= "%%VMK2%%";
 #-------------------------------------------------------------------------------
 
 my $LOOPCNT	= 2;	# times

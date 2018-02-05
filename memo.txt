@@ -37,9 +37,6 @@
 # VM インベントリ登録、起動失敗時のメッセージを全部ログに出すこと。
   (先頭1行のみログ出力となっているパタンがある。ライセンス切れを起こしたとき、ログからわかるようにする意図)
 
-# genw-remote-node.pl のために、vSphere Client のインベントリ上のvMA VM の名前は以下のようになる必要がある。
-	'vSphere Management Assistant (vMA)01'
-	'vSphere Management Assistant (vMA)02'
 
 # UCVM は iSCSI Target と同じ ESXi で稼働するように cf.pl を exec-vm-datastore.sh も自動構成するよう修正する。
 
@@ -48,3 +45,7 @@
   inventory への VM register が invalid な VM を登録した場合、電源ON で そんなVMはない と失敗する
   vm-start.pl は対策済みなので、 FOGかexecリソースの活性リトライで救う必要がある。
 
+# 2018.02.05 vMA VM の vClient 表示名 を自動取得して、genw-remote-node (genw.sh) を生成するようにした。 
+  genw-remote-node.pl のために、vSphere Client のインベントリ上のvMA VM の名前は以下のようになる必要がある。
+	'vSphere Management Assistant (vMA)01'
+	'vSphere Management Assistant (vMA)02'

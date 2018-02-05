@@ -31,22 +31,15 @@ my $TMPL_STOP	= $TMPL_DIR . "/vm-stop.pl";
 my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
 my $TMPL_CRED	= $TMPL_DIR . "/credstore.pl";
 
-#my @esxi_ip	= ('10.0.0.1', '10.0.0.2');		# ESXi IP address
-#my @esxi_pw	= ('cluster-0', '(none)');		# ESXi root password
-#my @vma_hn	= ('vma1', 'vma2');			# vMA hostname
-#my @vma_ip	= ('10.0.0.21', '10.0.0.22');		# vMA IP address
-#my @vma_pw	= ('cluster-0', 'cluster-0');		# vMA vi-admin password
-#my $dsname	= "iSCSI";				# iSCSI Datastore
-#my $vmhba	= "vmhba33";				# iSCSI Software Adapter
-
 # Development environment
 my @esxi_ip	= ('192.168.137.51', '192.168.137.52');		# ESXi IP address
 my @esxi_pw	= ('cluster-0', 'cluster-0');			# ESXi root password
 my @vma_hn	= ('vma1', 'vma2');				# vMA hostname
 my @vma_ip	= ('192.168.137.205', '192.168.137.206');	# vMA IP address
 my @vma_pw	= ('cluster-0', 'cluster-0');			# vMA vi-admin password
-my @iscsi_ip	= ('192.168.137.11', '192.168.137.12'); 	# vMA IP address
-my @iscsi_pw	= ('cluster-0', 'cluster-0');			# vMA vi-admin password
+my @vma_dn	= ('', '');					# vMA Display Name
+my @iscsi_ip	= ('192.168.137.11', '192.168.137.12'); 	# iSCSI IP address
+my @iscsi_pw	= ('cluster-0', 'cluster-0');			# iSCSI root password
 my $dsname	= "iSCSI";					# iSCSI Datastore
 my $vmhba	= "vmhba33";					# iSCSI Software Adapter
 my @ipw 	= ('192.168.137.201', '192.168.137.202');	# Target of IP Monitor
@@ -63,6 +56,7 @@ my @ipw 	= ('192.168.137.201', '192.168.137.202');	# Target of IP Monitor
 my %VMs = ();
 my @menu_vMA;
 my $ret 	= "";
+my @outs = ();
 
 open(IN, $TMPL_CONF);
 my @lines = <IN>;
@@ -256,6 +250,72 @@ sub DelNode {
 }
 
 #
+# Get Display Name of vMA hosts
+# 	Setting up @vma_dn
+#
+sub getvMADisplayName{
+	my @dirstack = ();
+	push @dirstack, getcwd;
+	chdir $vmcmd_dir;
+
+	for (my $i = 0; $i < 2; $i++) {
+		my $found = 0;
+		my $thumbprint = "";
+		my $cmd1 = $vmcmd . ' -U root -P ' . $esxi_pw[$i] . ' -H ' . $esxi_ip[$i];
+
+		# Getting .vmx paths from ESXi IP
+		&execution ($cmd1 . ' -l');
+		my @vmxs = @outs;
+		foreach my $vmx ( @vmxs ) {
+			if ( $vmx eq "" ) {
+				next;
+			}
+
+			# Getting .vmx path from vMA IP
+			&execution ( $cmd1 . " \"" . $vmx . "\" getguestinfo ip" );
+			if ( $outs[0] =~ /$vma_ip[$i]/ ) {
+				$found = 1;
+
+				# Getting thumbprint of ESXi host
+				&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " vm process list");
+				foreach ( @outs ) {
+					if ( /thumbprint: (.+?) / ) {
+						$thumbprint = $1;
+						last;
+					}
+				}
+				print "[D] ----------\n";
+				print "[D] thumbprint of ESXi#" . ($i +1) . " ($esxi_ip[$i]) = [$thumbprint]\n";
+				print "[D] ----------\n";
+
+				# Getting vMA Display Name from vMA .vmx path
+				&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint vm process list");
+				foreach ( @outs ) {
+					if ( /^(\S.+)$/ ) {
+						$vma_dn[$i] = $1;
+					}
+					if ( /Config File: (,*)$/ ) {
+						if ( $1 eq $vmx ) {
+							last;
+						}
+					}
+				}
+				if ($vma_dn[$i] ne "") {
+					last;
+				}
+			}
+		}
+		if ($found == 0) {
+			die "[E] No vMA found\n";
+		}
+		print "[D] ----------\n";
+		print "[D] [$vma_dn[$i]]\n";
+		print "[D] ----------\n";
+	}
+	chdir pop @dirstack;
+}
+
+#
 # Setup before.local and after.local on vMA hosts
 #
 sub putInitScripts {
@@ -367,7 +427,7 @@ sub Save {
 		&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa_iscsi_$i.pub $esxi_ip[0]:/tmp");
 		&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa_iscsi_$i.pub $esxi_ip[1]:/tmp");
 
-		&execution("del credstore_$i.sh id_rsa$i.pub id_rsa_iscsi_$i.pub");
+		&execution("del credstore_$i.sh id_rsa_vma_$i.pub id_rsa_iscsi_$i.pub");
 	}
 
 	for (my $i = 0; $i<2; $i++){
@@ -495,6 +555,8 @@ sub Save {
 	close(OUT);
 	close(IN);
 
+	&getvMADisplayName;
+
 	open(IN, "$TMPL_DIR/genw-remote-node.pl") or die;
 	open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-remote-node/genw.sh") or die;
 	while (<IN>) {
@@ -506,6 +568,8 @@ sub Save {
 		if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
 		if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
 		if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+		if (/%%VMADN1%%/)	{ s/$&/$vma_dn[0]/;}
+		if (/%%VMADN2%%/)	{ s/$&/$vma_dn[1]/;}
 		#print "[D ] $_";
 		print OUT;
 	}
@@ -793,13 +857,14 @@ sub showVM {
 #-------------------------------------------------------------------------------
 sub execution {
 	my $cmd = shift;
+	@outs = ();
 	&Log("[D] executing [$cmd]\n");
 	open(my $h, "$cmd 2>&1 |") or die "[E] execution [$cmd] failed [$!]";
 	while(<$h>){
-		#push (@lines, $_);
 		print;
-		#chomp;
 		#&Log("[D]	$_\n");
+		chomp;
+		push (@outs, $_);
 	}
 	close($h);
 	&Log(sprintf("[D] result ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
