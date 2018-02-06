@@ -294,10 +294,8 @@ sub getvMADisplayName{
 					if ( /^(\S.+)$/ ) {
 						$vma_dn[$i] = $1;
 					}
-					if ( /Config File: (,*)$/ ) {
-						if ( $1 eq $vmx ) {
-							last;
-						}
+					if ( /Config File: $vmx$/ ) {
+						last;
 					}
 				}
 				if ($vma_dn[$i] ne "") {
@@ -411,7 +409,7 @@ sub Save {
 		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $CFG_CRED $vma_ip[$i]:/tmp");
 
 		# Access to vMA and execute credstore_admin.pl
-		# ‚±‚±‚Å vMA ƒzƒXƒgã‚Ì /tmp ‚É root ƒ†[ƒU‚Ì id_rsa.pub ‚ªƒRƒs[‚³‚ê‚éBŒã‚ÅÁ‚·‚±‚ÆB
+		# ã“ã“ã§ vMA ãƒ›ã‚¹ãƒˆä¸Šã® /tmp ã« root ãƒ¦ãƒ¼ã‚¶ã® id_rsa.pub ãŒã‚³ãƒ”ãƒ¼ã•ã‚Œã‚‹ã€‚å¾Œã§æ¶ˆã™ã“ã¨ã€‚
 		&execution(".\\putty.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
 
 		# Configure id_rsa.pub and known_hosts file on iscsi
