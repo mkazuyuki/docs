@@ -21,11 +21,24 @@ DatastoreName=%%DATASTORE%%
 # Unregistering "invalid VMs" and "existing UC VMs" from ESXi inventory
 HOME=/root
 logger -t expresscls "**** entr  before.local ****"
+
+ssh -i ~/.ssh/id_rsa $vmk "
+IFS='
+'
+for a in \$(vim-cmd vmsvc/getallvms 2>&1 | fgrep '[$DatastoreName]' | sed 's/^.\+[ ]\+\[.*\] //' | sed 's/\/.*//' ); do
+	echo \"kill VM [\$a]\"
+	str=\"ps | grep 'vmx-mks:\${a}'\"
+	# echo [\$str]
+	p=\$(eval \$str | awk '{print \$2}')
+	# echo [\$p]
+	kill \$p
+done
+
 ssh -i ~/.ssh/id_rsa $vmk "
 for a in \$(vim-cmd vmsvc/getallvms 2>&1 | grep '\[$DatastoreName\]' | awk '{print \$1}'); do
-	echo \"stop and unregister VM ID[\$a]\"
-	vim-cmd vmsvc/power.off \$a 2>&1
+	echo \"unregister VM ID[\$a]\"
 	vim-cmd vmsvc/unregister \$a 2>&1
 done
+
 " | logger -t expresscls
 logger -t expresscls "**** exit before.local ****"

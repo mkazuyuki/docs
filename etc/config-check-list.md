@@ -5,3 +5,5 @@
 |  2| Path to .vmx file is enclosed by single quotation ( ' ) in the start.sh of vMA Cluster. | Check each start.sh in failover-groups of vMA Cluster. ||
 |  3| vmware-cmd, esxcli and ssh command can execute without inputting password. | vmware-cmd ||
 |  4| vMA VMs are registered on ESXi as 'vSphere Management Assistant (vMA)01' on primary and 'vSphere Management Assistant (vMA)02' on secondary. |Chekc vMA VMAs name on ESXi inventory on vSphere Client|
+|  5| MD on iSCSI is ext4 and should be formatted with " mkfs -t ext4 -O -6bit,-uninit_bg DATA_PARTITION_DEVICE_NAME ". | "tune2fs -l" then "64bit" and "uninit_bg" flag disabled. |
+
