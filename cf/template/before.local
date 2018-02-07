@@ -34,7 +34,6 @@ for a in \$(vim-cmd vmsvc/getallvms 2>&1 | fgrep '[$DatastoreName]' | sed 's/^.\
 	kill \$p
 done
 
-ssh -i ~/.ssh/id_rsa $vmk "
 for a in \$(vim-cmd vmsvc/getallvms 2>&1 | grep '\[$DatastoreName\]' | awk '{print \$1}'); do
 	echo \"unregister VM ID[\$a]\"
 	vim-cmd vmsvc/unregister \$a 2>&1
