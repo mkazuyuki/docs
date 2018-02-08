@@ -248,6 +248,7 @@ On iscsi1, create fileio backstore and configure it as backstore for the iSCSI T
 
 - Save config and exit.
 
+		> cd /
 		> saveconfig
 		> exit
 
