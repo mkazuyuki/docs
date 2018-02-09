@@ -1,3 +1,6 @@
+2018.02.06	firewal が開けるべき port 番号をリストアップすること。
+2018.02.07	vm-stop.pl で　unregister 済みを検出した場合、exit 1 となるのを exit 0 となるように修正する。 (vm-start.pl で起動済みの場合も要確認)
+
 --------
 ★	ESXi への root login が lock down されると、after.local が 
 
