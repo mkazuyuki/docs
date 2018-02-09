@@ -13,7 +13,8 @@ my @cfg_paths = (
 );
 
 # The HBA name to connect to iSCSI Datastore.
-my $vmhba = "%%VMHBA%%";
+my $vmhba1 = "%%VMHBA%%";
+my $vmhba2 = "%%VMHBA%%";
 
 # The Datastore name which the VM is stored.
 my $datastore = "%%DATASTORE%%";
@@ -54,10 +55,12 @@ my %state = (
 my $tmp = `ip address | grep $vma1`;
 if ($? == 0) {
 	$vmk = $vmk1;
+	$vmhba = $vmhba1;
 } else {
 	$tmp = `ip address | grep $vma2`;
 	if ($? == 0) {
 		$vmk = $vmk2;
+		$vmhba = $vmhba2;
 	} else {
 		&Log("[E] Invalid configuration (Mananegment host IP could not be found).\n");
 		exit 1;
