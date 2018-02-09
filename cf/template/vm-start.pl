@@ -13,8 +13,8 @@ my @cfg_paths = (
 );
 
 # The HBA name to connect to iSCSI Datastore.
-my $vmhba1 = "%%VMHBA%%";
-my $vmhba2 = "%%VMHBA%%";
+my $vmhba1 = "%%VMHBA1%%";
+my $vmhba2 = "%%VMHBA2%%";
 
 # The Datastore name which the VM is stored.
 my $datastore = "%%DATASTORE%%";

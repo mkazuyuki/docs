@@ -41,7 +41,7 @@ my @vma_dn	= ('', '');					# vMA Display Name
 my @iscsi_ip	= ('192.168.137.11', '192.168.137.12'); 	# iSCSI IP address
 my @iscsi_pw	= ('cluster-0', 'cluster-0');			# iSCSI root password
 my $dsname	= "iSCSI";					# iSCSI Datastore
-my $vmhba	= "vmhba33";					# iSCSI Software Adapter
+my @vmhba	= ("vmhba33", "vmhba33");			# iSCSI Software Adapter
 my @ipw 	= ('192.168.137.201', '192.168.137.202');	# Target of IP Monitor
 
 ## Initial environment
@@ -484,7 +484,8 @@ sub Save {
 			#print "[D<] $_" if /%%/;
 
 			if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
-			if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+			if (/%%VMHBA1%%/)	{ s/$&/$vmhba[0]/;}
+			if (/%%VMHBA2%%/)	{ s/$&/$vmhba[1]/;}
 			if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
 			if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
 			if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
@@ -541,7 +542,8 @@ sub Save {
 	while (<IN>) {
 		#print "[D<] $_" if /%%/;
 		#if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
-		if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+		if (/%%VMHBA1%%/)	{ s/$&/$vmhba[0]/;}
+		if (/%%VMHBA2%%/)	{ s/$&/$vmhba[1]/;}
 		if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
 		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
 		if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
@@ -594,8 +596,9 @@ sub menu {
 		'set iSCSI#2 IP           : ' . $iscsi_ip[1],
 		'set iSCSI#1 root password: ' . $iscsi_pw[0],
 		'set iSCSI#2 root password: ' . $iscsi_pw[1],
+		'set iSCSI Adapter#1 name : ' . $vmhba[0],
+		'set iSCSI Adapter#2 name : ' . $vmhba[1],
 		'set iSCSI Datastore name : ' . $dsname,
-		'set iSCSI Adapter name   : ' . $vmhba,
 		'set IP monitor#1 IP      : ' . $ipw[0],
 		'set IP monitor#2 IP      : ' . $ipw[1],
 		'add VM',
@@ -646,11 +649,11 @@ sub select {
 	elsif ( $menu_vMA[$i] =~ /set iSCSI#([1..2]) root password/ ) {
 		&setiSCSIPwd($1);
 	}
+	elsif ( $menu_vMA[$i] =~ /set iSCSI Adapter#([1,2]) name/ ) {
+		&setVMHBA($1);
+	}
 	elsif ( $menu_vMA[$i] =~ /set iSCSI Datastore name/ ) {
 		&setDatastoreName;
-	}
-	elsif ( $menu_vMA[$i] =~ /set iSCSI Adapter name/ ) {
-		&setVMHBA;
 	}
 	elsif ( $menu_vMA[$i] =~ /set IP monitor#([1,2]) IP/ ) {
 		&setIPW($1);
@@ -750,11 +753,12 @@ sub setDatastoreName{
 }
 
 sub setVMHBA{
-	print "[" . $vmhba . "] > ";
+	my $i = $_[0] - 1;
+	print "[" . $vmhba[$i] . "] > ";
 	$ret = <STDIN>;
 	chomp $ret;
 	if ($ret ne "") {
-		$vmhba = $ret;
+		$vmhba[$i] = $ret;
 	}
 }
 

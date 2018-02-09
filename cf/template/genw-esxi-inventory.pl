@@ -22,8 +22,8 @@ my $vma1 = "%%VMA1%%";
 my $vma2 = "%%VMA2%%";
 
 # Device name of iSCSI Software Adapter on ESXi-1 and ESXi-2 
-my $vmhba1 = "%%VMHBA%%";
-my $vmhba2 = "%%VMHBA%%";
+my $vmhba1 = "%%VMHBA1%%";
+my $vmhba2 = "%%VMHBA2%%";
 #-------------------------------------------------------------------------------
 
 # This line need for correct execution of vmware-cmd w/o password
