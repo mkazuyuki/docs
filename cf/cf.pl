@@ -258,57 +258,53 @@ sub getvMADisplayName{
 	push @dirstack, getcwd;
 	chdir $vmcmd_dir;
 
+	# Finding vMA <Display Name> from vMA <IP>\n";
 	for (my $i = 0; $i < 2; $i++) {
 		my $found = 0;
 		my $thumbprint = "";
 		my $cmd1 = $vmcmd . ' -U root -P ' . $esxi_pw[$i] . ' -H ' . $esxi_ip[$i];
 
-		# Getting .vmx paths from ESXi IP
-		&execution ($cmd1 . ' -l');
-		my @vmxs = @outs;
-		foreach my $vmx ( @vmxs ) {
-			if ( $vmx eq "" ) {
-				next;
-			}
-
-			# Getting .vmx path from vMA IP
-			&execution ( $cmd1 . " \"" . $vmx . "\" getguestinfo ip" );
-			if ( $outs[0] =~ /$vma_ip[$i]/ ) {
-				$found = 1;
-
-				# Getting thumbprint of ESXi host
-				&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " vm process list");
-				foreach ( @outs ) {
-					if ( /thumbprint: (.+?) / ) {
-						$thumbprint = $1;
-						last;
-					}
-				}
-				print "[D] ----------\n";
-				print "[D] thumbprint of ESXi#" . ($i +1) . " ($esxi_ip[$i]) = [$thumbprint]\n";
-				print "[D] ----------\n";
-
-				# Getting vMA Display Name from vMA .vmx path
-				&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint vm process list");
-				foreach ( @outs ) {
-					if ( /^(\S.+)$/ ) {
-						$vma_dn[$i] = $1;
-					}
-					if ( /Config File: $vmx$/ ) {
-						last;
-					}
-				}
-				if ($vma_dn[$i] ne "") {
-					last;
-				}
+		print "[D] ----------\n";
+		print "[D] Getting thumbprint of ESXi host\n";
+		print "[D] ----------\n";
+		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " vm process list");
+		foreach ( @outs ) {
+			if ( /thumbprint: (.+?) / ) {
+				$thumbprint = $1;
+				last;
 			}
 		}
+
+		print "[D] ----------\n";
+		print "[D] Getting VM <Display Name> and <Config File>\n";
+		print "[D] ----------\n";
+		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint vm process list");
+		my %cf = ();
+		for (my $n = 0; $n <= $#outs; $n++) {
+			if ( $outs[$n] =~ /Config File: (.+)/ ) {
+				$cf{$outs[ $n - 6 ]} = $1;
+				# print "[D] ! [$outs[$n - 6]][" . $cf{$outs[ $n - 6 ]}. "]\n";
+			}
+		}
+
+		print "[D] ----------\n";
+		print "[D] Finding vMA <Display Name> by getting IP of <Config File>\n";
+		print "[D] ----------\n";
+		foreach my $dn (keys %cf) {
+			&execution ( $cmd1 . " \"" . $cf{$dn} . "\" getguestinfo ip" );
+			if ( $outs[0] =~ /$vma_ip[$i]/ ) {
+				$found = 1;
+				$vma_dn[$i] = $dn;
+				print "[D] ----------\n";
+				print "[D] Found vMA Display Name [$vma_dn[$i]] for ESXi #[$i]\n";
+				print "[D] ----------\n";
+				last;
+			}
+		}
+
 		if ($found == 0) {
 			die "[E] No vMA found\n";
 		}
-		print "[D] ----------\n";
-		print "[D] [$vma_dn[$i]]\n";
-		print "[D] ----------\n";
 	}
 	chdir pop @dirstack;
 }
@@ -322,6 +318,8 @@ sub putInitScripts {
 		foreach my $file (@locals) {
 			open(IN, "$TMPL_DIR/$file") or die;
 			open(OUT,">  $file") or die;
+			#binmode(IN);
+			binmode(OUT);
 			while (<IN>) {
 				if (/%%VMK%%/)		{ s/$&/$esxi_ip[$n]/;}
 				if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
@@ -348,7 +346,6 @@ sub putInitScripts {
 }
 
 sub Save {
-
 	# Setup before.local and after.local on vMA hosts
 	&putInitScripts;
 

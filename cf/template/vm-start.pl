@@ -41,6 +41,7 @@ my $start_to = 10;
 my $vmk = "";
 my $cfg_path = "";
 my $vmname = "";
+my $vmhba = "";
 my @lines = ();
 
 # VM execution state map
