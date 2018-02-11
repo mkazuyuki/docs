@@ -9,13 +9,7 @@ use FindBin;
 #-------------------------------------------------------------------------------
 # The path to VM configuration file. This must be absolute UUID-based path.
 # like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
-
-my @cfg_paths = (
-'%%VMX%%'
-);
-
-# The HBA name to connect to iSCSI Datastore.
-#my $vmhba = "%%VMHBA%%";
+my $cfg_path = '%%VMX%%';
 
 # The Datastore name which the VM is stored.
 my $datastore = "%%DATASTORE%%";
@@ -28,23 +22,12 @@ my $vmk2 = "%%VMK2%%";
 my $vma1 = "%%VMA1%%";
 my $vma2 = "%%VMA2%%";
 #-------------------------------------------------------------------------------
-# If using vmconf.pl as configuration file, comment out the above configuration
-# and comment in the below configuraiton.
-##our @cfg_paths = ();
-##our $datastore = "";
-##our $vmk1 = "";
-##our $vmk2 = "";
-##our $vma1 = "";
-##our $vma2 = "";
-##require($FindBin::Bin . "/vmconf.pl");
-#-------------------------------------------------------------------------------
 # The interval to check the vm status. (second)
 my $interval = 5;
 # The miximum count to check the vm status.
 my $max_cnt = 100;
 #-------------------------------------------------------------------------------
 # Global values
-my $cfg_path = "";
 my $vmname = "";
 my $vmk = "";
 
@@ -75,30 +58,17 @@ my %state = (
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
-my $r = 0;
-foreach (@cfg_paths){
-	# VMname to be output on log.
-	$vmname = $_;
-	$vmname =~ s/^(.*\/)(.*)(\.vmx)/$2/;
-	$cfg_path = $_;
-	&Log("[I] [$vmname][$cfg_path]\n");
-	if (&IsPoweredOn()){
-		if (&PowerOff()){
-			if (!&WaitPoweredOffDone()){
-				$r = 1;
-			}
-		}else{
-			$r = 1;
-		}
-	}
-	if (&UnRegisterVm()){
-		next;
-		#exit 0;
-	}else{
-		$r = 1;
+# VMname to be output on log.
+$vmname = $cfg_path;
+$vmname =~ s/^(.*\/)(.*)(\.vmx)/$2/;
+&Log("[I] [$vmname][$cfg_path]\n");
+if (&IsPoweredOn()){
+	if (&PowerOff()){
+		&WaitPoweredOffDone();
 	}
 }
-exit $r;
+exit &UnRegisterVm();
+
 #-------------------------------------------------------------------------------
 # Functions
 #-------------------------------------------------------------------------------
@@ -213,19 +183,19 @@ sub UnRegisterVm{
 	}
 	if ($flag == 0){
 		&Log("[I] [$vmname] at [$vmk] already unregistered.\n");
-		return 1;
+		return 0;
 	}else{
 		$opn_ret = open(my $fh, $vmcmd . " " . $svop . " \"" . $cfg_path . "\" 2>&1 |");
 		if (!$opn_ret){
 			&Log("[E] [$vmname] at [$vmk]: $vmcmd $svop could not be executed.\n");
-			return 0;
+			return 1;
 		}
 		$line = <$fh>;
 		if (defined($line)){
-			$ret = 1;
+			$ret = 0;
 			&Log("[I] [$vmname] at [$vmk]: Unregistered.\n");
 		}else{
-			$ret = 0;
+			$ret = 1;
 			&Log("[E] [$vmname] at [$vmk]: Could not unregister VM: $line\n");
 		}
 		close($fh);

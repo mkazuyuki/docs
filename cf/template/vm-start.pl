@@ -144,8 +144,6 @@ sub IsStorageReady{
 }
 #-------------------------------------------------------------------------------
 sub RegisterVm{
-	my $ret = 1;
-	#my $svop = "-s register";
 	my $vmcmd_list = $vmcmd . " -l";
 	my $vmid = "";
 
@@ -157,10 +155,9 @@ sub RegisterVm{
 		&Log("[D][RegisterVm]\t[$_]\n");
 		if ($cfg_path eq $_){
 			&Log("[I] [$vmname] at [$vmk] already registered.\n");
-			$ret = 0;
+			return 0;
 		}
 	}
-	return 0 if ($ret == 0);
 
 	# Registering VM
 	################################
