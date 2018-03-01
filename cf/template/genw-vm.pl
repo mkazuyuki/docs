@@ -118,12 +118,12 @@ sub IsEqualState {
 	my $ret = 0;
 	my $opn_ret;
 
-	$ret = &execution($vmcmd . " '" . $cfg_path . "' " . $vmop);
+	&execution($vmcmd . " '" . $cfg_path . "' " . $vmop);
 	if ($lines[0] =~ /^$vmop\(\)\s=\s(.+)$/){
 		$ret = 1 if ($1 eq $state);
 		&Log("[D] [IsEqualState] [$vmname] at [$vmk] VM execution state is [$1].\n");
 	}else{
-		&Log("[E] [IsEqualState] [$vmname] at [$vmk] could not get VM execution state:\n");
+		&Log("[E] [IsEqualState] [$vmname] at [$vmk] could not get VM execution state.\n");
 	}
 	return $ret;
 }
