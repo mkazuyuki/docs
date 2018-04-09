@@ -17,8 +17,11 @@
 use strict;
 use Cwd;
 
-my $vmcmd_dir = $ENV{'ProgramFiles'} . '\VMware\VMware vSphere CLI\bin';
+my $vmcmd_dir = $ENV{'ProgramFiles(x86)'} . '\VMware\VMware vSphere CLI\bin';
 my $vmcmd = 'vmware-cmd.pl';
+
+# print $ENV{'ProgramFiles'};
+# print $vmcmd_dir;
 
 my $CFG_DIR	= "conf";
 my $CFG_FILE	= $CFG_DIR . "/clp.conf";
@@ -32,17 +35,16 @@ my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
 my $TMPL_CRED	= $TMPL_DIR . "/credstore.pl";
 
 # Development environment
-my @esxi_ip	= ('192.168.137.51', '192.168.137.52');		# ESXi IP address
-my @esxi_pw	= ('cluster-0', 'cluster-0');			# ESXi root password
+my @esxi_ip	= ('172.31.255.1', '172.31.255.2');		# ESXi IP address
+my @esxi_pw	= ('NEC123nec!', 'NEC123nec!');			# ESXi root password
 my @vma_hn	= ('vma1', 'vma2');				# vMA hostname
-my @vma_ip	= ('192.168.137.205', '192.168.137.206');	# vMA IP address
-my @vma_pw	= ('cluster-0', 'cluster-0');			# vMA vi-admin password
+my @vma_ip	= ('172.31.255.6', '172.31.255.7');		# vMA IP address
+my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA vi-admin password
 my @vma_dn	= ('', '');					# vMA Display Name
-my @iscsi_ip	= ('192.168.137.11', '192.168.137.12'); 	# iSCSI IP address
-my @iscsi_pw	= ('cluster-0', 'cluster-0');			# iSCSI root password
+my @iscsi_ip	= ('172.31.255.11', '172.31.255.12');		# iSCSI IP address
+my @iscsi_pw	= ('NEC123nec!', 'NEC123nec!');			# iSCSI root password
 my $dsname	= "iSCSI";					# iSCSI Datastore
-my @vmhba	= ("vmhba33", "vmhba33");			# iSCSI Software Adapter
-my @ipw 	= ('192.168.137.201', '192.168.137.202');	# Target of IP Monitor
+my @ipw 	= ('172.31.255.31', '172.31.255.32');		# Target of IP Monitor
 
 ## Initial environment
 #my @esxi_ip	= ('0.0.0.0', '0.0.0.0');	# ESXi IP address
@@ -52,6 +54,9 @@ my @ipw 	= ('192.168.137.201', '192.168.137.202');	# Target of IP Monitor
 #my @vma_pw	= ('(none)', '(none)');		# vMA vi-admin password
 #my $dsname	= "iSCSI";			# iSCSI Datastore
 #my $vmhba	= "vmhba33";			# iSCSI Software Adapter
+
+my @wwn 	= ('iqn.1998-01.com.vmware:1', 'iqn.1998-01.com.vmware:2');	# Pre-defined iSCSI WWN to be set to ESXi
+my @vmhba	= ('', '');							# iSCSI Software Adapter
 
 my %VMs = ();
 my @menu_vMA;
@@ -309,6 +314,72 @@ sub getvMADisplayName{
 	chdir pop @dirstack;
 }
 
+sub setIQN {
+	my @outs = ();
+
+	my $vmcmd_dir = $ENV{'ProgramFiles'} . '\VMware\VMware vSphere CLI\bin';
+	my @dirstack = ();
+	push @dirstack, getcwd;
+	chdir $vmcmd_dir;
+
+	for (my $i = 0; $i < 2; $i++) {
+		#my $vmhba = "";
+		my $thumbprint = "";
+
+		# Getting thumbprint of ESXi host
+		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " vm process list");
+		foreach ( @outs ) {
+			if ( /thumbprint: (.+?) / ) {
+				$thumbprint = $1;
+				last;
+			}
+		}
+		&Log("[I] ----------\n");
+		&Log("[I] thumbprint of ESXi#" . ($i +1) . " ($esxi_ip[$i]) = [$thumbprint]\n");
+		&Log("[I] ----------\n");
+
+		# Getting vmhba
+		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter list");
+		foreach ( @outs ) {
+			if ( /^vmhba[\S]+/ ) {
+				#$vmhba = $&;
+				$vmhba[$i] = $&;
+			}
+		}
+		&Log("[I] ----------\n");
+		&Log("[I] iSCSI Sofware Adapter HBA#" . ($i +1) . " = [" . $vmhba[$i] . "]\n");
+		&Log("[I] ----------\n");
+
+		# Checking WWN before setting it
+		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter get -A $vmhba[$i]");
+		foreach ( @outs ) {
+			if ( /^   Name: (.+)/ ) {
+				&Log("[I] ----------\n");
+				&Log("[I] Before setting WWN#" . ($i +1) . " = [$1]\n");
+				&Log("[I] ----------\n");
+			}
+		}
+
+		# Setting WWN
+		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter set -A $vmhba[$i] -n $wwn[$i]");
+
+		# Checking WWN after setting it
+		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter get -A $vmhba[$i]");
+		foreach ( @outs ) {
+			if ( /^   Name: (.+)/ ) {
+				&Log("[I] ----------\n");
+				&Log("[I] After setting  WWN#" . ($i +1) . " = [$1]\n");
+				&Log("[I] ----------\n");
+				# $wwn[$i] = $1;
+			}
+		}
+	}
+
+	chdir pop @dirstack;
+
+}
+
+
 #
 # Setup before.local and after.local on vMA hosts
 #
@@ -348,6 +419,9 @@ sub putInitScripts {
 sub Save {
 	# Setup before.local and after.local on vMA hosts
 	&putInitScripts;
+
+	# Setup iSCSI Initiator IQN
+	&setIQN;
 
 	#
 	# Setup Authentication
@@ -593,8 +667,6 @@ sub menu {
 		'set iSCSI#2 IP           : ' . $iscsi_ip[1],
 		'set iSCSI#1 root password: ' . $iscsi_pw[0],
 		'set iSCSI#2 root password: ' . $iscsi_pw[1],
-		'set iSCSI Adapter#1 name : ' . $vmhba[0],
-		'set iSCSI Adapter#2 name : ' . $vmhba[1],
 		'set iSCSI Datastore name : ' . $dsname,
 		'set IP monitor#1 IP      : ' . $ipw[0],
 		'set IP monitor#2 IP      : ' . $ipw[1],
@@ -645,9 +717,6 @@ sub select {
 	}
 	elsif ( $menu_vMA[$i] =~ /set iSCSI#([1..2]) root password/ ) {
 		&setiSCSIPwd($1);
-	}
-	elsif ( $menu_vMA[$i] =~ /set iSCSI Adapter#([1,2]) name/ ) {
-		&setVMHBA($1);
 	}
 	elsif ( $menu_vMA[$i] =~ /set iSCSI Datastore name/ ) {
 		&setDatastoreName;
@@ -749,16 +818,6 @@ sub setDatastoreName{
 	}
 }
 
-sub setVMHBA{
-	my $i = $_[0] - 1;
-	print "[" . $vmhba[$i] . "] > ";
-	$ret = <STDIN>;
-	chomp $ret;
-	if ($ret ne "") {
-		$vmhba[$i] = $ret;
-	}
-}
-
 sub setIPW {
 	my $i = $_[0] - 1;
 	print "[" . $ipw[$i] . "] > ";
@@ -780,7 +839,7 @@ sub addVM {
 	open (IN, "$cmd 2>&1 |");
 	my @out = <IN>;
 	close(IN);
-	chdir pop @dirstack; 
+	chdir pop @dirstack;
 
 	print "\n--------\n";
 	my $i = 0;

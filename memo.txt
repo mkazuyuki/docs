@@ -1,4 +1,5 @@
 2018.02.06	firewal が開けるべき port 番号をリストアップすること。
+2018.02.12	過去の入力パラメータを覚えておく仕組みを入れる。
 
 --------
 ★	ESXi への root login が lock down されると、after.local が 
