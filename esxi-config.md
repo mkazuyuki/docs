@@ -1,3 +1,11 @@
+# ESXi 6.5 update 1 configuration notes for ECX Host Clustering
+
+- In spite of the port group `VM Netowrk HOGE` exists, the following message appears.
+
+	"This VM is attached to a network portgroup `VM Network HOGE` that doesn't exist. Edit this VM and attach it to a different network."
+
+	This happens on the portgroup which have a VMkernel NIC. As a workaround, having multiple port groups for the same vSwitch solve the situation. One portgroup for the VMkernel NIC and another portgroup for the VM clients all on the same vswitch. ([Reference](https://communities.vmware.com/thread/547389))
+
 # ESXi configuration notes for ECX Host Clustering
 - All the nodes in vMA Cluster and iSCSI Cluster should be configured to boot automatically when ESXi starts.
 - The network for iSCSI and Data Mirroring should use physically indepenent netowrk if possible. Configure logically independent at least.
