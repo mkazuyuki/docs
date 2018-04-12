@@ -20,9 +20,6 @@ use Cwd;
 my $vmcmd_dir = $ENV{'ProgramFiles(x86)'} . '\VMware\VMware vSphere CLI\bin';
 my $vmcmd = 'vmware-cmd.pl';
 
-# print $ENV{'ProgramFiles'};
-# print $vmcmd_dir;
-
 my $CFG_DIR	= "conf";
 my $CFG_FILE	= $CFG_DIR . "/clp.conf";
 my $CFG_CRED	= "credstore_.pl";
@@ -316,8 +313,6 @@ sub getvMADisplayName{
 
 sub setIQN {
 	my @outs = ();
-
-	my $vmcmd_dir = $ENV{'ProgramFiles'} . '\VMware\VMware vSphere CLI\bin';
 	my @dirstack = ();
 	push @dirstack, getcwd;
 	chdir $vmcmd_dir;
