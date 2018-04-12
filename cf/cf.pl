@@ -32,8 +32,8 @@ my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
 my $TMPL_CRED	= $TMPL_DIR . "/credstore.pl";
 
 # Development environment
-my @esxi_ip	= ('172.31.255.2', '172.31.255.3');		# ESXi IP address
-my @esxi_pw	= ('NEC123nec!', 'NEC123nec!');			# ESXi root password
+my @esxi_ip    = ('172.31.255.2', '172.31.255.3');             # ESXi IP address
+my @esxi_pw    = ('NEC123nec!', 'NEC123nec!');                 # ESXi root password
 my @vma_hn	= ('VMA01', 'VMA02');				# vMA hostname
 my @vma_ip	= ('172.31.255.6', '172.31.255.7');		# vMA IP address
 my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA vi-admin password
@@ -312,13 +312,11 @@ sub getvMADisplayName{
 }
 
 sub setIQN {
-	my @outs = ();
 	my @dirstack = ();
 	push @dirstack, getcwd;
 	chdir $vmcmd_dir;
 
 	for (my $i = 0; $i < 2; $i++) {
-		#my $vmhba = "";
 		my $thumbprint = "";
 
 		# Getting thumbprint of ESXi host
@@ -337,7 +335,6 @@ sub setIQN {
 		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter list");
 		foreach ( @outs ) {
 			if ( /^vmhba[\S]+/ ) {
-				#$vmhba = $&;
 				$vmhba[$i] = $&;
 			}
 		}
