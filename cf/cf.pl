@@ -18,7 +18,7 @@ use strict;
 use Cwd;
 
 my $vmcmd_dir = $ENV{'ProgramFiles(x86)'} . '\VMware\VMware vSphere CLI\bin';
-my $vmcmd = 'vmware-cmd.pl';
+my $vmcmd = 'perl vmware-cmd.pl';
 
 my $CFG_DIR	= "conf";
 my $CFG_FILE	= $CFG_DIR . "/clp.conf";
