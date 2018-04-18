@@ -58,7 +58,7 @@ ESXi hosts
 | FIP for iSCSI Target     | 192.168.0.10		   |
 | Cluster Partition	   | /dev/sdb1			   |
 | Data Partition	   | /dev/sdb2			   |
-| WWN of iSCSI Target	   | iqn.1996-10.com.expresscluster:1 |
+| WWN of iSCSI Target	   | iqn.1996-10.com.ecx:1 |
 | WWN of iSCSI Initiator 1 | iqn.1998-01.com.vmware:1      |
 | WWN of iSCSI Initiator 2 | iqn.1998-01.com.vmware:2      |
 
@@ -233,16 +233,16 @@ On iscsi1, create fileio backstore and configure it as backstore for the iSCSI T
 - Creating IQN
 
 		> cd /iscsi
-		> create iqn.2016-10.com.ec:1
+		> create iqn.1996-10.com.ecx:1
 
 - Assigning LUN to IQN
 
-		> cd /iscsi/iqn.2016-10.com.ec:1/tpg1/luns
+		> cd /iscsi/iqn.1996-10.com.ecx:1/tpg1/luns
 		> create /backstores/fileio/idisk
 
 - Allow machine (IQN of iSCSI Initiator) to scan the iSCSI target.
 
-		> cd /iscsi/iqn.2016-10.com.ec:1/tpg1/acls
+		> cd /iscsi/iqn.1996-10.com.ecx:1/tpg1/acls
 		> create iqn.1998-01.com.vmware:1
 		> create iqn.1998-01.com.vmware:2
 
@@ -286,6 +286,10 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 On node-i1
 
+- Install tool for iSCSI Initiator.
+
+		# yum install iscsi-initiator-utils
+
 - Edit iSCSI Initiator configuration.
 
 		# vi /etc/iscsi/initiatorname.iscsi
@@ -308,17 +312,17 @@ On node-i1
 
 - Login to iSCSI Target which specified as -T argument.
 
-		# iscsiadm -m node -T iqn.2016-10.com.ec:1 -p 192.168.0.10 -l
+		# iscsiadm -m node -T iqn.1996-10.com.ecx:1 -p 192.168.0.10 -l
 
 - Format/Initialise the iSCSI device and mount
 
 		# mkfs -t ext4 <iSCSI Device Name>
-		# mount /dev/disk/by-path/ip-192.168.0.10:3260-iscsi-iqn.2016-10.com.ec:1-lun-0-part1 /mnt/
+		# mount /dev/disk/by-path/ip-192.168.0.10:3260-iscsi-iqn.1996-10.com.ecx:1-lun-0-part1 /mnt/
 <!--
 		# dd if=/dev/zero of=<Cluster Partition Device Name>
 
 		e.g.
-		# dd if=/dev/zero of=/dev/disk/by-path/ip-192.168.137.134:3260-iscsi-iqn.2016-10.com.ec:1-lun-0-part1
+		# dd if=/dev/zero of=/dev/disk/by-path/ip-192.168.137.134:3260-iscsi-iqn.1996-10.com.ecx:1-lun-0-part1
 -->
 
 ## Revision history
