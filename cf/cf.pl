@@ -32,8 +32,10 @@ my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
 my $TMPL_CRED	= $TMPL_DIR . "/credstore.pl";
 
 # Development environment
-my @esxi_ip    = ('172.31.255.2', '172.31.255.3');             # ESXi IP address
-my @esxi_pw    = ('NEC123nec!', 'NEC123nec!');                 # ESXi root password
+#my @esxi_ip	= ('172.31.255.1', '172.31.255.1');		# ESXi IP address
+#my @esxi_pw	= ('sv9500type2', 'sv9500type2');		# ESXi root password
+my @esxi_ip	= ('172.31.255.2', '172.31.255.3');		# ESXi IP address
+my @esxi_pw	= ('NEC123nec!', 'NEC123nec!');			# ESXi root password
 my @vma_hn	= ('VMA01', 'VMA02');				# vMA hostname
 my @vma_ip	= ('172.31.255.6', '172.31.255.7');		# vMA IP address
 my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA vi-admin password
@@ -55,9 +57,11 @@ my @ipw 	= ('172.31.255.31', '172.31.255.32');		# Target of IP Monitor
 my @wwn 	= ('iqn.1998-01.com.vmware:1', 'iqn.1998-01.com.vmware:2');	# Pre-defined iSCSI WWN to be set to ESXi
 my @vmhba	= ('', '');							# iSCSI Software Adapter
 
-my %VMs = ();
+my @VMsHost = ();	# Array of VMs for each ESXi
+my %VMs = ();		# Hash of VMs for an ESXi
+my @VM = ();		# Array of Hash of VMs for an ESXi
 my @menu_vMA;
-my $ret 	= "";
+my $ret = "";
 my @outs = ();
 
 open(IN, $TMPL_CONF);
@@ -84,15 +88,24 @@ exit;
 # Changing clp.conf contents for adding new VM group resource
 #-------
 sub AddNode {
+	my $esxidx = shift;
 	my $vmname = shift;
 	my $i = 0;
 	my $gid = 0;
+	my $fop = "";
+
+	print "[D] esxidx[$esxidx] vmname[$vmname]\n";
 
 	for($i = $#lines; $i > 0; $i--){
 		if($lines[$i] =~ /<gid>(.*)<\/gid>/){
 			$gid = $1 + 1;
 			last;
 		}
+	}
+
+	if ($esxidx == 1) {
+		$fop =	"		<policy name=\"$vma_hn[1]\"><order>0</order></policy>\n".
+			"		<policy name=\"$vma_hn[0]\"><order>1</order></policy>\n";
 	}
 
 	#
@@ -103,6 +116,7 @@ sub AddNode {
 		"		<comment> <\/comment>",
 		"		<resource name=\"exec\@exec-$vmname\"/>",
 		"		<gid>$gid</gid>\n",
+		$fop,
 		"	</group>\n"
 	);
 	splice(@lines, $#lines, 0, @ins);
@@ -825,81 +839,118 @@ sub addVM {
 	push @dirstack, getcwd;
 	chdir $vmcmd_dir;
 
-	#### TBD ####
-	# use of $esxi_ip[1] should be considered
-	my $cmd = $vmcmd . ' -U root -P ' . $esxi_pw[0] . ' --server ' . $esxi_ip[0] . ' -l';
-	open (IN, "$cmd 2>&1 |");
-	my @out = <IN>;
-	close(IN);
+	my @vms = ();
+
+	my $i = 0;
+	my $j = 0;
+
+	for $i (0 .. 1) {
+		my $cmd = $vmcmd . ' -U root -P ' . $esxi_pw[$i] . ' --server ' . $esxi_ip[$i] . ' -l';
+		open (IN, "$cmd 2>&1 |");
+		@outs = <IN>;
+		close(IN);
+		shift @outs;	# disposing head of the list
+		foreach (@outs) {
+			chomp;
+		}
+		push @{$vms[$i]}, @outs;
+	}
+
 	chdir pop @dirstack;
 
-	print "\n--------\n";
-	my $i = 0;
-	print "[0] BACK\n";
-	foreach (@out) {
-		chomp;
-		if ( /.*\/(.*)\.vmx$/ ){
-			print "[$i] [$_]\n";
+	my $k = 0;
+	for $i (0 .. $#vms) {
+		print "\n[ ESXi #" . ($i + 1) . " ]\n-----------\n";
+		for $j ( 0 .. $#{$vms[$i]} ) {
+			$k++;
+			print "[$k] $vms[$i][$j]\n";
 		}
-		$i++;
 	}
-	print "\nwhich to add? (1.." . ($i -1) . ") > ";
-	my $j = <STDIN>;
+
+	print "\nwhich to add? (1.." . ($k -1) . ") > ";
+	$j = <STDIN>;
 	chomp $j;
-	if ($j !~ /^\d+$/){
+	print "[D] j[$j] k[$k] #{$vms[0]}[$#{$vms[0]}]\n";
+	if ($j !~ /^\d+$/) {
 		return -1;
-	} elsif ($j == 0){
+	} elsif ($j == 0) {
 		return 0;
-	} elsif ($j - 1 > $i) {
+	} elsif ($j > $k) {
 		return 0;
 	} else {
-		my $vmname = $out[$j];
+		my $vmname = "";
+		if ( $j > $#{$vms[0]} + 1 ) {
+			# print "$j	$#{$vms[0]}\n";
+			$vmname = $vms[1][$j - $#{$vms[0]} - 2];
+		} else {
+			$vmname = $vms[0][$j - 1];
+		}
+
 		$vmname =~ s/.*\/(.*)\.vmx/$1/;
 
-		# failover-$vmanme must be shorter than 31 characters (excluding termination charcter).
+		# failover-$vmname must be shorter than 31 characters (excluding termination charcter).
 		$vmname =~ s/[^\w\s-]//g;
 		if (length($vmname) > 22) {
 			$vmname = substr ($vmname,0,22);
 		}
 		$vmname =~ s/-$//;
-		$VMs{$vmname} = $out[$j];
-		&AddNode($vmname);
+
+		if ( $j > $#{$vms[0]} + 1 ) {
+			$VM[1]{$vmname} = $vms[1][$j - $#{$vms[0]} - 2];
+			&AddNode(1,$vmname);
+		} else {
+			$VM[0]{$vmname} = $vms[0][$j];
+			&AddNode(0,$vmname);
+		}
+
 		print "\n[I] added [$vmname]\n";
 	}
 }
 
 sub delVM {
-	my $i = 1;
+	my $i = 0;
+	my $j = 0;
 	my @list = ();
-	print "\n--------\n";
-	print "[0] BACK\n";
-	foreach (keys %VMs) {
-		print "[$i] [$_]\n";
-		push @list, $_;
-		$i++;
+
+	my $k = 0;
+	for $i (0 .. $#VM) {
+		print "\n[ ESXi #" . ($i + 1) . " ]\n-----------\n";
+		foreach (keys %{$VM[$i]}) {
+			# print "	[$_] [$VM[$i]{$_}]\n";
+			$k++;
+			print "[$k]	[$_]\n";
+		}
 	}
-	print "\nwhich to del? (1.." . ($i -1) . ") > ";
-	$i = <STDIN>;
-	chomp $i;
-	if ($i !~ /^\d+$/){
+
+	print "\nwhich to del? (1..$k) > ";
+	$j = <STDIN>;
+	chomp $j;
+	if ($j !~ /^\d+$/){
 		return -1;
-	} elsif ($i == 0){
-		return 0;
-	} elsif ($i - 1 > $#list) {
-		return 0;
 	} else {
-		my $vmname = $list[$i-1];
-		&DelNode($vmname);
-		print "\n[I] deleted [$vmname]\n";
+		$k = 0;
+		for $i (0 .. $#VM) {
+			foreach (keys %{$VM[$i]}) {
+				$k++;
+				if ($j == $k) {
+					&DelNode($_);
+					print "\n[I] deleted [$_]\n";
+					delete $VM[$i]{$_};
+				}
+			}
+		}
 	}
 }
 
 sub showVM {
 	print "\n";
 	my $i = 1;
-	foreach (@lines) {
-		if (/<group name=\"failover-(.*)\">/) {
-			print "\t[" . $i++ . "]\t$1\n";
+
+	for $i (0 .. $#VM) {
+		print "\n[ ESXi #" . ($i + 1) . " ]\n-----------\n";
+		foreach (keys %{$VM[$i]}) {
+			# print "	[$_] [$VM[$i]{$_}]\n";
+			print "	[$_]\n";
 		}
 	}
 }
