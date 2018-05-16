@@ -32,16 +32,21 @@
 
 # ESXi ホストの I/O (DK/NW)監視処理 を考慮する
 
-# targetcli は抜ける前に cd / が必要
-
 # 両ESXi の 「ポートグループのプロパティ」 > 「ネットワークラベル」 は同じ名前に設定すること。
 ネットワークラベルが異なると、UCVM の 「ネットワーク アダプタ N」の「ネットワーク接続」が FO 後に空欄となり、通信不能に陥る。
 
 # VM インベントリ登録、起動失敗時のメッセージを全部ログに出すこと。
   (先頭1行のみログ出力となっているパタンがある。ライセンス切れを起こしたとき、ログからわかるようにする意図)
 
-
 # UCVM は iSCSI Target と同じ ESXi で稼働するように cf.pl を exec-vm-datastore.sh も自動構成するよう修正する。
+
+# 2018.05.16 vMA の OVF から after.local を削除する。(after.local が ESXi へアクセスできないのに、esxcliを実行しようとする)
+
+# 2018.05.16 VM起動時に実行する vmware-cmd はログに全行出力を行うよう修正する。
+  (先頭1行のみログ出力となっている。ライセンス切れを起こしたとき、ログからわかるようにする意図)
+
+# 2016.05.16 iSCSI VM の target の設定に ESXi の iSCSI Software Adapter の IQN を自動登録するようにする。
+  既存の iSCSI Datastore が存在するケースでも iSCSI Software Adapter の IQN を変更せずともよいようにする。
 
 #done
 # 2017.12.17 UC VM起動にリトライを入れること
@@ -54,3 +59,5 @@
 	'vSphere Management Assistant (vMA)02'
 
 # 2018.02.12 vm-stop.pl で　unregister 済みを検出した場合、exit 1 となるのを exit 0 となるように修正する。 (vm-start.pl で起動済みの場合も要確認)
+
+# 2018.05.16 targetcli は抜ける前に cd / が必要

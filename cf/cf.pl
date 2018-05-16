@@ -39,7 +39,6 @@ my @esxi_pw	= ('NEC123nec!', 'NEC123nec!');			# ESXi root password
 my @vma_hn	= ('VMA01', 'VMA02');				# vMA hostname
 my @vma_ip	= ('172.31.255.6', '172.31.255.7');		# vMA IP address
 my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA vi-admin password
-my @vma_dn	= ('', '');					# vMA Display Name
 my @iscsi_ip	= ('172.31.255.11', '172.31.255.12');		# iSCSI IP address
 my @iscsi_pw	= ('NEC123nec!', 'NEC123nec!');			# iSCSI root password
 my $dsname	= "iSCSI";					# iSCSI Datastore
@@ -56,10 +55,9 @@ my @ipw 	= ('172.31.255.31', '172.31.255.32');		# Target of IP Monitor
 
 my @wwn 	= ('iqn.1998-01.com.vmware:1', 'iqn.1998-01.com.vmware:2');	# Pre-defined iSCSI WWN to be set to ESXi
 my @vmhba	= ('', '');							# iSCSI Software Adapter
+my @vma_dn	= ('', '');							# vMA Display Name
 
-my @VMsHost = ();	# Array of VMs for each ESXi
-my %VMs = ();		# Hash of VMs for an ESXi
-my @VM = ();		# Array of Hash of VMs for an ESXi
+my @vmx = ();		# Array of Hash of VMs for an ESXi
 my @menu_vMA;
 my $ret = "";
 my @outs = ();
@@ -67,12 +65,6 @@ my @outs = ();
 open(IN, $TMPL_CONF);
 my @lines = <IN>;
 close(IN);
-foreach (@lines){
-	if (/<group name=\"failover-(.*)\">/) {
-		#print "[D] $1\n";
-		$VMs{$1} = "";
-	}
-}
 
 while ( 1 ) {
 	if ( ! &select ( &menu ) ) {exit}
@@ -94,7 +86,7 @@ sub AddNode {
 	my $gid = 0;
 	my $fop = "";
 
-	print "[D] esxidx[$esxidx] vmname[$vmname]\n";
+	#print "[D] esxidx[$esxidx] vmname[$vmname]\n";
 
 	for($i = $#lines; $i > 0; $i--){
 		if($lines[$i] =~ /<gid>(.*)<\/gid>/){
@@ -112,9 +104,9 @@ sub AddNode {
 	# Group
 	#
 	my @ins = (
-		"	<group name=\"failover-$vmname\">",
-		"		<comment> <\/comment>",
-		"		<resource name=\"exec\@exec-$vmname\"/>",
+		"	<group name=\"failover-$vmname\">\n",
+		"		<comment> <\/comment>\n",
+		"		<resource name=\"exec\@exec-$vmname\"/>\n",
 		"		<gid>$gid</gid>\n",
 		$fop,
 		"	</group>\n"
@@ -193,13 +185,14 @@ sub AddNode {
 }
 
 sub DelNode {
+	my $esxidx = shift;
 	my $vmname = shift;
 	my $i = 0;
 	my $j = 0;
 	my $gid = 0;
 
-	print "[D] deleting [$VMs{$vmname}]\n";
-	delete($VMs{$vmname});
+	print "[D] deleting [$vmx[$esxidx]{$vmname}]\n";
+	delete($vmx[$esxidx]{$vmname});
 
 	#
 	# Group
@@ -429,9 +422,7 @@ sub Save {
 	# Setup iSCSI Initiator IQN
 	&setIQN;
 
-	#
 	# Setup Authentication
-	#
 
 	# script for credstoreadmin.pl on vMA
 	open(IN, "$SCRIPT_DIR/credstore.pl") or die;
@@ -439,7 +430,7 @@ sub Save {
 	while (<IN>) {
 		#print "[D<] $_" if /%%/;
 
-		#if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+		#if (/%%VMX%%/)		{ s/$&/$vmx[$i]{$vm}/;}
 		#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
 		#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
 		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
@@ -449,7 +440,7 @@ sub Save {
 		if (/%%VMKPW1%%/)	{ s/$&/$esxi_pw[0]/;}
 		if (/%%VMKPW2%%/)	{ s/$&/$esxi_pw[1]/;}
 
-		#print "[D ] $_";
+		#print "[D>] $_";
 		print OUT;
 	}
 	close(OUT);
@@ -554,71 +545,72 @@ sub Save {
 	#
 	# Creating start.sh stop.sh genw.sh
 	#
-	foreach my $vm (keys %VMs) {
-		open(IN, "$TMPL_START") or die;
-		open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/start.sh") or die;
-		while (<IN>) {
-			#print "[D<] $_" if /%%/;
+	for my $i (0 .. $#vmx) {
+		foreach my $vm (keys %{$vmx[$i]}) {
+			open(IN, "$TMPL_START") or die;
+			open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/start.sh") or die;
+			while (<IN>) {
+				#print "[D<] $_" if /%%/;
 
-			if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
-			if (/%%VMHBA1%%/)	{ s/$&/$vmhba[0]/;}
-			if (/%%VMHBA2%%/)	{ s/$&/$vmhba[1]/;}
-			if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
-			if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
-			if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
-			if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
-			if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+				if (/%%VMX%%/)		{ s/$&/$vmx[$i]{$vm}/;}
+				if (/%%VMHBA1%%/)	{ s/$&/$vmhba[0]/;}
+				if (/%%VMHBA2%%/)	{ s/$&/$vmhba[1]/;}
+				if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+				if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+				if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+				if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+				if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
 
-			#print "[D ] $_";
-			print OUT;
+				#print "[D ] $_";
+				print OUT;
+			}
+			close(OUT);
+			close(IN);
+
+			open(IN, "$TMPL_STOP") or die;
+			open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/stop.sh") or die;
+			while (<IN>) {
+				#print "[D<] $_" if /%%/;
+
+				if (/%%VMX%%/)		{ s/$&/$vmx[$i]{$vm}/;}
+				#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+				if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+				if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+				if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+				if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+				if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+
+				#print "[D ] $_";
+				print OUT;
+			}
+			close(OUT);
+			close(IN);
+
+			open(IN, "$TMPL_MON") or die;
+			open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-$vm/genw.sh") or die;
+			while (<IN>) {
+				#print "[D<] $_" if /%%/;
+
+				if (/%%VMX%%/)		{ s/$&/$vmx[$i]{$vm}/;}
+				#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+				#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+				if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+				if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+				if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+				if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+
+				#print "[D ] $_";
+				print OUT;
+			}
+			close(OUT);
+			close(IN);
 		}
-		close(OUT);
-		close(IN);
-
-		open(IN, "$TMPL_STOP") or die;
-		open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/stop.sh") or die;
-		while (<IN>) {
-			#print "[D<] $_" if /%%/;
-
-			if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
-			#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
-			if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
-			if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
-			if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
-			if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
-			if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
-
-			#print "[D ] $_";
-			print OUT;
-		}
-		close(OUT);
-		close(IN);
-
-		open(IN, "$TMPL_MON") or die;
-		open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-$vm/genw.sh") or die;
-		while (<IN>) {
-			#print "[D<] $_" if /%%/;
-
-			if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
-			#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
-			#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
-			if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
-			if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
-			if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
-			if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
-
-			#print "[D ] $_";
-			print OUT;
-		}
-		close(OUT);
-		close(IN);
 	}
-
 	open(IN, "$TMPL_DIR/genw-esxi-inventory.pl") or die;
 	open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-esxi-inventory/genw.sh") or die;
 	while (<IN>) {
 		#print "[D<] $_" if /%%/;
-		#if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+		#if (/%%VMX%%/)		{ s/$&/$vmx[$i]{$vm}/;}
 		if (/%%VMHBA1%%/)	{ s/$&/$vmhba[0]/;}
 		if (/%%VMHBA2%%/)	{ s/$&/$vmhba[1]/;}
 		if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
@@ -638,7 +630,7 @@ sub Save {
 	open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-remote-node/genw.sh") or die;
 	while (<IN>) {
 		#print "[D<] $_" if /%%/;
-		#if (/%%VMX%%/)		{ s/$&/$VMs{$vm}/;}
+		#if (/%%VMX%%/)		{ s/$&/$vmx[$i]{$vm}/;}
 		#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
 		#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
 		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
@@ -849,7 +841,7 @@ sub addVM {
 		open (IN, "$cmd 2>&1 |");
 		@outs = <IN>;
 		close(IN);
-		shift @outs;	# disposing head of the list
+		shift @outs;	# disposing head of the list (blank line)
 		foreach (@outs) {
 			chomp;
 		}
@@ -870,7 +862,7 @@ sub addVM {
 	print "\nwhich to add? (1.." . ($k -1) . ") > ";
 	$j = <STDIN>;
 	chomp $j;
-	print "[D] j[$j] k[$k] #{$vms[0]}[$#{$vms[0]}]\n";
+	#print "[D] j[$j] k[$k] #{$vms[0]}[$#{$vms[0]}]\n";
 	if ($j !~ /^\d+$/) {
 		return -1;
 	} elsif ($j == 0) {
@@ -896,11 +888,11 @@ sub addVM {
 		$vmname =~ s/-$//;
 
 		if ( $j > $#{$vms[0]} + 1 ) {
-			$VM[1]{$vmname} = $vms[1][$j - $#{$vms[0]} - 2];
-			&AddNode(1,$vmname);
+			$vmx[1]{$vmname} = $vms[1][$j - $#{$vms[0]} - 2];
+			&AddNode(1, $vmname);
 		} else {
-			$VM[0]{$vmname} = $vms[0][$j];
-			&AddNode(0,$vmname);
+			$vmx[0]{$vmname} = $vms[0][$j];
+			&AddNode(0, $vmname);
 		}
 
 		print "\n[I] added [$vmname]\n";
@@ -913,10 +905,10 @@ sub delVM {
 	my @list = ();
 
 	my $k = 0;
-	for $i (0 .. $#VM) {
+	for $i (0 .. $#vmx) {
 		print "\n[ ESXi #" . ($i + 1) . " ]\n-----------\n";
-		foreach (keys %{$VM[$i]}) {
-			# print "	[$_] [$VM[$i]{$_}]\n";
+		foreach (keys %{$vmx[$i]}) {
+			# print "	[$_] [$vmx[$i]{$_}]\n";
 			$k++;
 			print "[$k]	[$_]\n";
 		}
@@ -929,13 +921,13 @@ sub delVM {
 		return -1;
 	} else {
 		$k = 0;
-		for $i (0 .. $#VM) {
-			foreach (keys %{$VM[$i]}) {
+		for $i (0 .. $#vmx) {
+			foreach (keys %{$vmx[$i]}) {
 				$k++;
 				if ($j == $k) {
-					&DelNode($_);
+					&DelNode($i, $_);
 					print "\n[I] deleted [$_]\n";
-					delete $VM[$i]{$_};
+					delete $vmx[$i]{$_};
 				}
 			}
 		}
@@ -946,10 +938,10 @@ sub showVM {
 	print "\n";
 	my $i = 1;
 
-	for $i (0 .. $#VM) {
+	for $i (0 .. $#vmx) {
 		print "\n[ ESXi #" . ($i + 1) . " ]\n-----------\n";
-		foreach (keys %{$VM[$i]}) {
-			# print "	[$_] [$VM[$i]{$_}]\n";
+		foreach (keys %{$vmx[$i]}) {
+			# print "	[$_] [$vmx[$i]{$_}]\n";
 			print "	[$_]\n";
 		}
 	}
