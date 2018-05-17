@@ -17,7 +17,13 @@
 use strict;
 use Cwd;
 
-my $vmcmd_dir = $ENV{'ProgramFiles(x86)'} . '\VMware\VMware vSphere CLI\bin';
+my $vmcmd_dir;
+if ( defined $ENV{'ProgramFiles(x86)'} ) {
+	$vmcmd_dir = $ENV{'ProgramFiles(x86)'};
+} else {
+	$vmcmd_dir = $ENV{'ProgramFiles'};
+}
+$vmcmd_dir .= '\VMware\VMware vSphere CLI\bin';
 my $vmcmd = 'perl vmware-cmd.pl';
 
 my $CFG_DIR	= "conf";
