@@ -891,7 +891,7 @@ sub addVM {
 			$vmx[1]{$vmname} = $vms[1][$j - $#{$vms[0]} - 2];
 			&AddNode(1, $vmname);
 		} else {
-			$vmx[0]{$vmname} = $vms[0][$j];
+			$vmx[0]{$vmname} = $vms[0][$j - 1];
 			&AddNode(0, $vmname);
 		}
 
