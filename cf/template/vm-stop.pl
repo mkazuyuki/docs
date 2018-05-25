@@ -10,6 +10,9 @@ use FindBin;
 # The path to VM configuration file. This must be absolute UUID-based path.
 # like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
 my $cfg_path = '%%VMX%%';
+# The HBA name to connect to iSCSI Datastore.
+my $vmhba1 = "%%VMHBA1%%";
+my $vmhba2 = "%%VMHBA2%%";
 
 # The Datastore name which the VM is stored.
 my $datastore = "%%DATASTORE%%";
@@ -29,15 +32,19 @@ my $max_cnt = 100;
 #-------------------------------------------------------------------------------
 # Global values
 my $vmname = "";
+my $vmhba = "";
 my $vmk = "";
+my @lines = ();
 
 my $tmp = `ip address | grep $vma1`;
 if ($? == 0) {
 	$vmk = $vmk1;
+	$vmhba = $vmhba1;
 } else {
 	$tmp = `ip address | grep $vma2`;
 	if ($? == 0) {
 		$vmk = $vmk2;
+		$vmhba = $vmhba2;
 	} else {
 		&Log("[E] Invalid configuration (Mananegment host IP could not be found).\n");
 		exit 1;
@@ -61,7 +68,7 @@ my %state = (
 # VMname to be output on log.
 $vmname = $cfg_path;
 $vmname =~ s/^(.*\/)(.*)(\.vmx)/$2/;
-&Log("[I] [$vmname][$cfg_path]\n");
+&Log("[D] [$vmname][$cfg_path]\n");
 if (&IsPoweredOn()){
 	if (&PowerOff()){
 		&WaitPoweredOffDone();
@@ -81,38 +88,37 @@ sub IsPoweredOn{
 }
 #-------------------------------------------------------------------------------
 sub IsEqualState{
-	my $vmop = "getstate";
 	my $state = shift;
 	my $ret = 0;
-	my $opn_ret;
-	my $line;
-	&Log("[D] [$vmcmd $cfg_path $vmop]\n");
-	$opn_ret = open(my $fh, $vmcmd . " \"" . $cfg_path . "\" " . $vmop . " 2>&1 |");
-	if (!$opn_ret){
-		&Log("[E] [$vmname] at [$vmk]: $vmcmd $vmop could not be executed.\n");
-		return 0;
-	}
-	$line = <$fh>;
-	if (defined($line)){
-		chomp($line);
-		if ($line =~ /^$vmop\(\)\s=\s(.+)$/){
-			$ret = 1 if ($1 eq $state);
-			&Log("[D] [$vmname] at [$vmk]: VM execution state is $1.\n");
-		}else{
-			&Log("[E] [$vmname] at [$vmk]: Could not get VM execution state: $line\n");
+	$cfg_path =~ s/^.*?([^\/]*\/[^\/]*$)/$1/;
+	my $cmd = "ssh ${vmk} \"
+		vmid=\\\$(vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}' | awk '{print \\\$1}')
+		logger -t expresscls \"checking pow stat of VM ID[\\\${vmid}]\" '[${cfg_path}]'
+		vim-cmd vmsvc/power.getstate \\\${vmid} 2>&1\"";
+	&execution($cmd);
+	foreach (@lines) {
+		if (/^Powered $state$/){
+			$ret = 1;
 		}
 	}
-	close($fh);
+	if ($ret == 1) {
+		&Log("[D] [$vmname] at [$vmk] : VM execution state is [$state].\n");
+		}else{
+		&Log("[E] [$vmname] at [$vmk] : Could not get VM execution state\n");
+		}
 	return $ret;
 }
 #-------------------------------------------------------------------------------
 sub PowerOff{
 	my $ret;
-# Soft stop.
-	$ret = &PowerOffOpMode("soft");
-# Hard stop if Soft stop failed.
+	if ( !&IsStorageReady ) {
+		$ret = &PowerOffOpMode("off");
+	} else {
+		$ret = &PowerOffOpMode("shutdown");
 	if (!$ret){
-		$ret = &PowerOffOpMode("hard");
+			$ret = &PowerOffOpMode("off");
+		}
+		return $ret;
 	}
 	return $ret;
 }
@@ -121,42 +127,27 @@ sub PowerOffOpMode{
 	my $vmop = "stop";
 	my $powerop_mode = shift;
 	my $ret = 0;
-	my $opn_ret;
-	my $line;
-	return 0 if ($powerop_mode !~ /^hard|soft$/);
-	&Log("[D] [" . $vmcmd . " \"" . $cfg_path . "\" " . $vmop . " " . $powerop_mode . "]\n");
-	$opn_ret = open(my $fh, $vmcmd . " \"" . $cfg_path . "\" " . $vmop . " " . $powerop_mode . " 2>&1 |");
-	if (!$opn_ret){
-		&Log("[E] [$vmname] at [$vmk]: $vmcmd $vmop $powerop_mode could not be executed.\n");
-		return 0;
-	}
-	$line = <$fh>;
-	if (defined($line)){
-		chomp($line);
-		if ($line =~ /^$vmop\(\)\s=\s(.+)$/){
-			if ($1 == 1){
+	return 0 if ($powerop_mode !~ /^off|shutdown$/);
+	my $cmd = "ssh -i ~/.ssh/id_rsa ${vmk} \"
+		vmid=\\\$(vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}' | awk '{print \\\$1}')
+		logger -t expresscls \"checking pow stat of VM ID[\\\${vmid}]\" '[${cfg_path}]'
+		vim-cmd vmsvc/power.${powerop_mode} \\\${vmid} 2>&1\"";
+	$ret = &execution($cmd);
+	if ($ret == 0) {
+		&Log("[I] [$vmname] at [$vmk]: Stopped. ($powerop_mode)\n");
 				$ret = 1;
-				&Log("[I] [$vmname] at [$vmk]: Stopped. ($powerop_mode)\n");
 			}else{
-				&Log("[E] [$vmname] at [$vmk]: Could not stop ($powerop_mode) VM: $line\n");
+		&Log("[E] [$vmname] at [$vmk]: Could not stop ($powerop_mode)\n");
+		$ret = 0;
 			}
-		}else{
-			&Log("[E] [$vmname] at [$vmk]: Could not stop ($powerop_mode) VM: $line\n");
-		}
-	}else{
-		if ($powerop_mode eq "soft"){
-			$ret = 1;
-			&Log("[I] [$vmname] at [$vmk]: Stopped. ($powerop_mode)\n");
-		}
-	}
-	close($fh);
+
 	return $ret;
 }
 #-------------------------------------------------------------------------------
 sub WaitPoweredOffDone{
 	for (my $i = 0; $i < $max_cnt; $i++){
 		if (&IsEqualState($state{"VM_EXECUTION_STATE_OFF"})){
-			&Log("[I] [$vmname] at [$vmk]: Powered off done. ($i)\n");
+			&Log("[I] [$vmname] at [$vmk]: Powered off done. times cnt = [$i]\n");
 			return 1;
 		}
 		&Log("[I] [$vmname] at [$vmk]: Waiting peowered off. ($i)\n");
@@ -167,42 +158,91 @@ sub WaitPoweredOffDone{
 }
 #-------------------------------------------------------------------------------
 sub UnRegisterVm{
-	my $svop = "-s unregister";
-	my $vmcmd_list = $vmcmd . " -l";
-	my @vmlist = `$vmcmd_list`;
 	my $ret = 0;
-	my $opn_ret;
 	my $flag = 0;
-	my $line;
-	foreach (@vmlist){
-		#if (/$cfg_path/){
-		chomp;
-		if ($cfg_path eq $_){
+	my $cmd = "ssh ${vmk} \"vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}'\"";
+	&execution($cmd);
+
+	foreach(@lines){
+		if (/$cfg_path/) {
+			&Log("[I] [$vmname] at [$vmk] exists, unregistering.\n");
 			$flag = 1;
 		}
 	}
 	if ($flag == 0){
 		&Log("[I] [$vmname] at [$vmk] already unregistered.\n");
 		return 0;
-	}else{
-		$opn_ret = open(my $fh, $vmcmd . " " . $svop . " \"" . $cfg_path . "\" 2>&1 |");
-		if (!$opn_ret){
-			&Log("[E] [$vmname] at [$vmk]: $vmcmd $svop could not be executed.\n");
+	}
+
+	$cmd = "ssh ${vmk} \"
+		vmid=\\\$(vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}' | awk '{print \\\$1}')
+		logger -t expresscls \"checking registered VM ID[\\\${vmid}]\" '[${cfg_path}]'
+		vim-cmd vmsvc/unregister \\\${vmid} 2>&1\"";
+	&execution($cmd);
+
+	$cmd = "ssh ${vmk} \"vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}'\"";
+	&execution($cmd);
+	foreach(@lines){
+		if (/$cfg_path/) {
+			&Log("[I] [$vmname] at [$vmk] exists, failed.\n");
 			return 1;
 		}
-		$line = <$fh>;
-		if (defined($line)){
-			$ret = 0;
-			&Log("[I] [$vmname] at [$vmk]: Unregistered.\n");
-		}else{
-			$ret = 1;
-			&Log("[E] [$vmname] at [$vmk]: Could not unregister VM: $line\n");
+	}
+	&Log("[I] [$vmname] at [$vmk] unregistered.\n");
+	return 0;
+}
+sub IsStorageReady{
+	my $device = "";
+	&execution("esxcli -s $vmk -u root storage vmfs extent list");
+	foreach (@lines) {
+		chomp;
+		&Log("[D][IsStorageReady] $_\n");
+		if(/^$datastore\s+(.+?\s+){2}(.+?)\s.*/){
+			$device = $2;
+			&Log("[D][IsStorageReady] \tdatastore [$datastore] = device [$device]\n");
+			last;
 		}
-		close($fh);
+	}
+	if($device eq ""){
+		&Log("[E][IsStorageReady] \tdatastore [$datastore] not found\n");
+		&execution("esxcli -s $vmk -u root storage core adapter rescan --adapter $vmhba");
+		return 0;
+	}
+
+	my $ret = -1;
+	&execution("esxcli -s $vmk -u root storage core path list -d $device");
+	foreach (@lines) {
+		chomp;
+		if(/   State: (.*)$/){
+			&Log("[D][IsStorageReady] \t[$_]\n");
+			if($1 eq "active"){
+				$ret = 1;
+			} else {
+			$ret = 0;
+		}
+			last;
+		}
+	}
+	if($ret == -1){
+		&Log("[E][IsStorageReady] datastore state for [$datastore] not found\n");
+		return 1;
 	}
 	return $ret;
 }
 #-------------------------------------------------------------------------------
+sub execution {
+        my $cmd = shift;
+        &Log("[D] executing [$cmd]\n");
+        open(my $h, "$cmd 2>&1 |") or die "[E] execution [$cmd] failed [$!]";
+        @lines = <$h>;
+        foreach (@lines) {
+               chomp;
+               &Log("[D]\t$_\n");
+        }
+        close($h);
+        &Log(sprintf("[D] result ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
+        return $?;
+}
 sub Log{
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 	$year += 1900;
