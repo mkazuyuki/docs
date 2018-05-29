@@ -1,6 +1,8 @@
 2018.02.06	firewal が開けるべき port 番号をリストアップすること。
 2018.02.12	過去の入力パラメータを覚えておく仕組みを入れる。
 2018.05.24	遅延装置を展開する。
+2018.05.28	既存 iSCSI Storage が存在する場合への対処を入れる (cf で target の設定変更を行う)
+2018.05.28	iSCSI Target Cluster のOS時刻を UTC にする。vMA と iSCSI Cluster の ESXi との時刻同期設定を ON にする。
 --------
 ★	ESXi への root login が lock down されると、after.local が 
 

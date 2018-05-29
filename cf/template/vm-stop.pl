@@ -102,9 +102,9 @@ sub IsEqualState{
 		}
 	}
 	if ($ret == 1) {
-		&Log("[D] [$vmname] at [$vmk] : VM execution state is [$state].\n");
+		&Log("[D] [$vmname] at [$vmk]: VM execution state is [$state].\n");
 		}else{
-		&Log("[E] [$vmname] at [$vmk] : Could not get VM execution state\n");
+		&Log("[E] [$vmname] at [$vmk]: Could not get VM execution state\n");
 		}
 	return $ret;
 }
@@ -145,15 +145,22 @@ sub PowerOffOpMode{
 }
 #-------------------------------------------------------------------------------
 sub WaitPoweredOffDone{
+	my $cmd = "ssh ${vmk} \"vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}'\"";
+	my $ret = &execution($cmd);
+	if ($ret != 0) {
+		&Log("[I] [$vmname] at [$vmk] not exist in inventory.\n");
+		return 1;
+	}
+
 	for (my $i = 0; $i < $max_cnt; $i++){
 		if (&IsEqualState($state{"VM_EXECUTION_STATE_OFF"})){
 			&Log("[I] [$vmname] at [$vmk]: Powered off done. times cnt = [$i]\n");
 			return 1;
 		}
-		&Log("[I] [$vmname] at [$vmk]: Waiting peowered off. ($i)\n");
+		&Log("[I] [$vmname] at [$vmk]: Waiting peowered off. count=[$i]\n");
 		sleep $interval;
 	}
-	&Log("[E] [$vmname] at [$vmk]: Not powered off done. ($max_cnt)=(wait count max)\n");
+	&Log("[E] [$vmname] at [$vmk]: Not powered off done. count=[$max_cnt] (wait count max)\n");
 	return 0;
 }
 #-------------------------------------------------------------------------------
@@ -176,7 +183,7 @@ sub UnRegisterVm{
 
 	$cmd = "ssh ${vmk} \"
 		vmid=\\\$(vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}' | awk '{print \\\$1}')
-		logger -t expresscls \"checking registered VM ID[\\\${vmid}]\" '[${cfg_path}]'
+		logger -t expresscls \"unregistering VM ID[\\\${vmid}]\" '[${cfg_path}]'
 		vim-cmd vmsvc/unregister \\\${vmid} 2>&1\"";
 	&execution($cmd);
 
