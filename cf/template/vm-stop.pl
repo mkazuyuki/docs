@@ -26,9 +26,9 @@ my $vma1 = "%%VMA1%%";
 my $vma2 = "%%VMA2%%";
 #-------------------------------------------------------------------------------
 # The interval to check the vm status. (second)
-my $interval = 5;
+my $interval = 6;
 # The miximum count to check the vm status.
-my $max_cnt = 100;
+my $max_cnt = 50;
 #-------------------------------------------------------------------------------
 # Global values
 my $vmname = "";
@@ -95,7 +95,7 @@ sub IsEqualState{
 		vmid=\\\$(vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}' | awk '{print \\\$1}')
 		logger -t expresscls \"checking pow stat of VM ID[\\\${vmid}]\" '[${cfg_path}]'
 		vim-cmd vmsvc/power.getstate \\\${vmid} 2>&1\"";
-	&execution($cmd);
+	&ssh_execution($cmd);
 	foreach (@lines) {
 		if (/^Powered $state$/){
 			$ret = 1;
@@ -104,7 +104,7 @@ sub IsEqualState{
 	if ($ret == 1) {
 		&Log("[D] [$vmname] at [$vmk]: VM execution state is [$state].\n");
 		}else{
-		&Log("[E] [$vmname] at [$vmk]: Could not get VM execution state\n");
+		&Log("[E] [$vmname] at [$vmk]: VM execution state is not [$state].\n");
 		}
 	return $ret;
 }
@@ -130,9 +130,9 @@ sub PowerOffOpMode{
 	return 0 if ($powerop_mode !~ /^off|shutdown$/);
 	my $cmd = "ssh -i ~/.ssh/id_rsa ${vmk} \"
 		vmid=\\\$(vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}' | awk '{print \\\$1}')
-		logger -t expresscls \"checking pow stat of VM ID[\\\${vmid}]\" '[${cfg_path}]'
+		logger -t expresscls \"pow off VM ID[\\\${vmid}]\" '[${cfg_path}]'
 		vim-cmd vmsvc/power.${powerop_mode} \\\${vmid} 2>&1\"";
-	$ret = &execution($cmd);
+	$ret = &ssh_execution($cmd);
 	if ($ret == 0) {
 		&Log("[I] [$vmname] at [$vmk]: Stopped. ($powerop_mode)\n");
 				$ret = 1;
@@ -146,7 +146,7 @@ sub PowerOffOpMode{
 #-------------------------------------------------------------------------------
 sub WaitPoweredOffDone{
 	my $cmd = "ssh ${vmk} \"vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}'\"";
-	my $ret = &execution($cmd);
+	my $ret = &ssh_execution($cmd);
 	if ($ret != 0) {
 		&Log("[I] [$vmname] at [$vmk] not exist in inventory.\n");
 		return 1;
@@ -168,7 +168,7 @@ sub UnRegisterVm{
 	my $ret = 0;
 	my $flag = 0;
 	my $cmd = "ssh ${vmk} \"vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}'\"";
-	&execution($cmd);
+	&ssh_execution($cmd);
 
 	foreach(@lines){
 		if (/$cfg_path/) {
@@ -185,10 +185,10 @@ sub UnRegisterVm{
 		vmid=\\\$(vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}' | awk '{print \\\$1}')
 		logger -t expresscls \"unregistering VM ID[\\\${vmid}]\" '[${cfg_path}]'
 		vim-cmd vmsvc/unregister \\\${vmid} 2>&1\"";
-	&execution($cmd);
+	&ssh_execution($cmd);
 
 	$cmd = "ssh ${vmk} \"vim-cmd vmsvc/getallvms 2>&1 | grep '${cfg_path}'\"";
-	&execution($cmd);
+	&ssh_execution($cmd);
 	foreach(@lines){
 		if (/$cfg_path/) {
 			&Log("[I] [$vmname] at [$vmk] exists, failed.\n");
@@ -237,6 +237,19 @@ sub IsStorageReady{
 	return $ret;
 }
 #-------------------------------------------------------------------------------
+sub ssh_execution {
+	my $cmd = shift;
+	my $cnt = $max_cnt;
+	while ($cnt-- > 0) {
+		my $ret = &execution($cmd);
+		if (($ret >> 8) == 255) {
+			&Log("Seemed timed out. Retrying. count=[$cnt]\n");
+		} else {
+			return $ret;
+		}
+	}
+}
+
 sub execution {
         my $cmd = shift;
         &Log("[D] executing [$cmd]\n");
