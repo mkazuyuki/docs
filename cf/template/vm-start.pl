@@ -36,6 +36,8 @@ my $interval = 1;
 my $max_cnt = 100;
 # The timeout to start the vm. (second)
 my $start_to = 10;
+# The interval for power on failure. (second)
+my $pwron_interval = 10;
 #-------------------------------------------------------------------------------
 # Global values
 my $vmk = "";
@@ -95,9 +97,11 @@ foreach (@cfg_paths){
 			next;
 		} else {
 			$r = 1;
+			sleep $pwron_interval;
 		}
 	} else {
 		$r = 1;
+		sleep $pwron_interval;
 	}
 }
 exit $r;

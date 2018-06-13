@@ -38,17 +38,13 @@ my $TMPL_MON	= $TMPL_DIR . "/genw-vm.pl";
 my $TMPL_CRED	= $TMPL_DIR . "/credstore.pl";
 
 # Development environment
-#my @esxi_ip	= ('172.31.255.1', '172.31.255.1');		# ESXi IP address
-#my @esxi_pw	= ('sv9500type2', 'sv9500type2');		# ESXi root password
 my @esxi_ip	= ('172.31.255.2', '172.31.255.3');		# ESXi IP address
-#my @esxi_pw	= ('NEC123nec!', 'NEC123nec!');			# ESXi root password
-my @esxi_pw	= ('cluster-0', 'cluster-0');			# ESXi root password
+my @esxi_pw	= ('NEC123nec!', 'NEC123nec!');			# ESXi root password
 my @vma_hn	= ('VMA01', 'VMA02');				# vMA hostname
 my @vma_ip	= ('172.31.255.6', '172.31.255.7');		# vMA IP address
 my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA vi-admin password
 my @iscsi_ip	= ('172.31.255.11', '172.31.255.12');		# iSCSI IP address
-#my @iscsi_pw	= ('NEC123nec!', 'NEC123nec!');			# iSCSI root password
-my @iscsi_pw	= ('cluster-0', 'cluster-0');			# iSCSI root password
+my @iscsi_pw	= ('NEC123nec!', 'NEC123nec!');			# iSCSI root password
 my $dsname	= "iSCSI";					# iSCSI Datastore
 my @ipw 	= ('172.31.255.31', '172.31.255.32');		# Target of IP Monitor
 
@@ -136,6 +132,7 @@ sub AddNode {
 		"			<act><retry>2</retry></act>\n",
 		"			<deact>\n",
 		"				<action>5</action>\n",
+		"				<retry>1</retry>\n",
 		"			</deact>\n",
 		"		</exec>\n"
 	);
@@ -162,6 +159,7 @@ sub AddNode {
 		"		</parameters>\n",
 		"		<polling>\n",
 		"			<timing>1</timing>\n",
+		"			<reconfirmation>1</reconfirmation>\n",
 		"		</polling>\n",
 		"		<relation>\n",
 		"			<name>failover-$vmname</name>\n",	##
