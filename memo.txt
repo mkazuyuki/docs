@@ -5,6 +5,7 @@
 2018.05.28	iSCSI Target Cluster のOS時刻を UTC にする。vMA と iSCSI Cluster の ESXi との時刻同期設定を ON にする。
 2018.06.07	iSCSI HBTO=35s (vMA HBTO = 90s), 172.31.255.31, 32 の VM を作って、iSCSI用 vSwitch につなげる。
 2018.06.11	vm-stop.pl は 環境変数 が CLP_FACTOR==GROUPFAILOVER の時 (shutdown ではなく) power off を実行する。
+2018.06.15	iSCSI Cluster に arpw を追加する。NPから復帰して、iscsi02 が落ちると、ESXi2 は ARPキャッシュがタイムアウトするまで iscsi02 を iSCSI Target だと思い込むから。
 --------
 ★	ESXi への root login が lock down されると、after.local が 
 
