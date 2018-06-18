@@ -6,6 +6,7 @@
 2018.06.07	iSCSI HBTO=35s (vMA HBTO = 90s), 172.31.255.31, 32 の VM を作って、iSCSI用 vSwitch につなげる。
 2018.06.11	vm-stop.pl は 環境変数 が CLP_FACTOR==GROUPFAILOVER の時 (shutdown ではなく) power off を実行する。
 2018.06.15	iSCSI Cluster に arpw を追加する。NPから復帰して、iscsi02 が落ちると、ESXi2 は ARPキャッシュがタイムアウトするまで iscsi02 を iSCSI Target だと思い込むから。
+2018.06.18	iSCSI Cluster の HBTO を 50秒、ipw の INT を 10秒に変更する。
 --------
 ★	ESXi への root login が lock down されると、after.local が 
 

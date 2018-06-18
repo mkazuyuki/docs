@@ -103,9 +103,9 @@ sub IsEqualState{
 	}
 	if ($ret == 1) {
 		&Log("[D] [$vmname] at [$vmk]: VM execution state is [$state].\n");
-		}else{
+	}else{
 		&Log("[E] [$vmname] at [$vmk]: VM execution state is not [$state].\n");
-		}
+	}
 	return $ret;
 }
 #-------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ sub PowerOff{
 		$ret = &PowerOffOpMode("off");
 	} else {
 		$ret = &PowerOffOpMode("shutdown");
-	if (!$ret){
+		if (!$ret){
 			$ret = &PowerOffOpMode("off");
 		}
 		return $ret;
@@ -134,7 +134,7 @@ sub PowerOffOpMode{
 	$ret = &execution($cmd);
 	if ($ret == 0) {
 		&Log("[I] [$vmname] at [$vmk]: Stopped. ($powerop_mode)\n");
-				$ret = 1;
+		$ret = 1;
 	}else{
 		&Log("[E] [$vmname] at [$vmk]: Could not stop ($powerop_mode)\n");
 		foreach (@lines){
@@ -160,6 +160,10 @@ sub WaitPoweredOffDone{
 	}
 
 	for (my $i = 0; $i < $max_cnt; $i++){
+		if ( ! &IsStorageReady ) {
+			&PowerOffOpMode("off");
+			return 1;
+		}
 		if (&IsEqualState($state{"VM_EXECUTION_STATE_OFF"})){
 			&Log("[I] [$vmname] at [$vmk]: Powered off done. times cnt = [$i]\n");
 			return 1;
@@ -232,8 +236,8 @@ sub IsStorageReady{
 			if($1 eq "active"){
 				$ret = 1;
 			} else {
-			$ret = 0;
-		}
+				$ret = 0;
+			}
 			last;
 		}
 	}
