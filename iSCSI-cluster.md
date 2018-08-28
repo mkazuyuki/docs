@@ -181,6 +181,29 @@ This resource is used for the **special case**
     - select [No operation] as [Final Action]
     - [Finish]
 
+#### Add one more custom monitor resource for updating arp table
+  - change to [Operation Mode] from [Config Mode]
+  - right click [Monitors] > [Add Monitor Resource]
+  - [Info] section
+    - select [custom monitor] as [type] > input *genw-arpTable* > [Next]
+  - [Monitor (common)] section
+    - input *30* as [Interval]
+    - select [Active] as [Monitor Timing]
+    - [Browse] button
+      - select [fip] > [OK]
+    - [Next]
+  - [Monitor (special)] section
+    - [Replace]
+      - select *genw-arpTable.sh* > [Open] > [Yes]
+    - input */opt/nec/clusterpro/log/genw-arpTable.log* as [Log Output Paht] > check [Rotate Log]
+    - [Next]
+  - [Recovery Action] section
+    - select [Execute only the final action] as [Recovery Action]
+    - [Browse]
+      - [LocalServer] > [OK]
+    - select [No operation] as [Final Action]
+    - [Finish]
+
 #### Adding Monitor which make remote vMA VM and ECX keep online.
 - on Cluster Manager
   - change to [Operation Mode] from [Config Mode]
