@@ -157,7 +157,7 @@ This resource is used for the **special case**
 - [Finish]
 
 
-#### Add the custom monitor resource for automatic MD recovery
+#### Add the first custom monitor resource for automatic MD recovery
 - on Cluster Manager
   - change to [Operation Mode] from [Config Mode]
   - right click [Monitors] > [Add Monitor Resource]
@@ -181,7 +181,8 @@ This resource is used for the **special case**
     - select [No operation] as [Final Action]
     - [Finish]
 
-#### Add one more custom monitor resource for updating arp table
+#### Add the second custom monitor resource for updating arp table
+- on Cluster Manager
   - change to [Operation Mode] from [Config Mode]
   - right click [Monitors] > [Add Monitor Resource]
   - [Info] section
