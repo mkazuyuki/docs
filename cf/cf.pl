@@ -9,9 +9,9 @@
 #	VMware-vSphere-CLI-6.0.0-3561779.exe
 #		https://my.vmware.com/jp/web/vmware/details?productId=491&downloadGroup=VCLI60U2
 #
-#	putty.exe , pscp.exe
+#	plink.exe , pscp.exe
 #		https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
-#			https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe
+#			https://the.earth.li/~sgtatham/putty/latest/w64/plink.exe
 #			https://the.earth.li/~sgtatham/putty/latest/w64/pscp.exe
 
 use strict;
@@ -403,7 +403,10 @@ sub putInitScripts {
 			}
 			close(OUT);
 			close(IN);
-			&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$n] $file $vma_ip[$n]:/tmp");
+			my $ret = &execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$n] $file $vma_ip[$n]:/tmp");
+			if ($ret != 0) {
+				return 1;
+			}
 			unlink ( "$file" ) or die;
 		}
 
@@ -416,7 +419,7 @@ sub putInitScripts {
 		}
 		close(OUT);
 		close(IN);
-		&execution(".\\putty.exe -l vi-admin -pw $vma_pw[$n] $vma_ip[$n] -m $file");
+		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$n] $vma_ip[$n] -m $file");
 		unlink ( "$file" ) or die;
 	}
 }
@@ -424,6 +427,10 @@ sub putInitScripts {
 sub Save {
 	# Setup before.local and after.local on vMA hosts
 	&putInitScripts;
+	if ($?) {
+		&Log("[E] failed to put init script\n");
+		return -1;
+	}
 
 	# Setup iSCSI Initiator IQN
 	&setIQN;
@@ -484,10 +491,13 @@ sub Save {
 
 		# Access to vMA and execute credstore_admin.pl
 		# ここで vMA ホスト上の /tmp に root ユーザの id_rsa.pub がコピーされる。後で消すこと。
-		&execution(".\\putty.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
-
+		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
+		if ($?) {
+			print "\n[E] failed to execute credstore_admin.pl\n";
+			return -1
+		}
 		# Configure id_rsa.pub and known_hosts file on iscsi
-		&execution(".\\putty.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] -m ssh-keyscan.sh");
+		&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] -m ssh-keyscan.sh");
 
 		# Get ssh public key from vMA, iSCSI
 		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i]:/tmp/id_rsa.pub .\\id_rsa_vma_$i.pub");
@@ -504,7 +514,7 @@ sub Save {
 
 	for (my $i = 0; $i<2; $i++){
 		# Access to ESXi and make /etc/ssh/keys-root/authorized_keys
-		&execution(".\\putty.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] -m $SCRIPT_DIR/sshmk.sh");
+		&execution(".\\plink.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] -m $SCRIPT_DIR/sshmk.sh");
 	}
 
 	&execution("del $CFG_CRED ssh-keyscan.sh");
@@ -698,9 +708,13 @@ sub select {
 		return -1;
 	}
 	elsif ( $menu_vMA[$i] =~ /save and exit/ ) {
-		&Save;
-		print "\nThe configuration files are saved in the \"conf\" directry.\nBye.\n";
-		return 0;
+		if ( &Save == 0 ) {
+			print "\nThe configuration files are saved in the \"conf\" directry.\nBye.\n";
+			return 0;
+		} else {
+			print "\nSomething failed\n";
+			return -1;
+		}
 	}
 	elsif ( $menu_vMA[$i] =~ /set ESXi#([1..2]) IP/ ) {
 		&setESXiIP($1);
