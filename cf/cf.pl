@@ -57,7 +57,6 @@ my @ipw 	= ('172.31.255.31', '172.31.255.32');		# Target of IP Monitor
 #my $dsname	= "iSCSI";			# iSCSI Datastore
 #my $vmhba	= "vmhba33";			# iSCSI Software Adapter
 
-my @wwn 	= ('iqn.1998-01.com.vmware:1', 'iqn.1998-01.com.vmware:2');	# Pre-defined iSCSI WWN to be set to ESXi
 my @vmhba	= ('', '');							# iSCSI Software Adapter
 my @vma_dn	= ('', '');							# vMA Display Name
 
@@ -324,67 +323,6 @@ sub getvMADisplayName{
 	chdir pop @dirstack;
 }
 
-sub setIQN {
-	my @dirstack = ();
-	push @dirstack, getcwd;
-	chdir $vmcmd_dir;
-
-	for (my $i = 0; $i < 2; $i++) {
-		my $thumbprint = "";
-
-		# Getting thumbprint of ESXi host
-		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " vm process list");
-		foreach ( @outs ) {
-			if ( /thumbprint: (.+?) / ) {
-				$thumbprint = $1;
-				last;
-			}
-		}
-		&Log("[I] ----------\n");
-		&Log("[I] thumbprint of ESXi#" . ($i +1) . " ($esxi_ip[$i]) = [$thumbprint]\n");
-		&Log("[I] ----------\n");
-
-		# Getting vmhba
-		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter list");
-		foreach ( @outs ) {
-			if ( /^vmhba[\S]+/ ) {
-				$vmhba[$i] = $&;
-			}
-		}
-		&Log("[I] ----------\n");
-		&Log("[I] iSCSI Sofware Adapter HBA#" . ($i +1) . " = [" . $vmhba[$i] . "]\n");
-		&Log("[I] ----------\n");
-
-		# Checking WWN before setting it
-		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter get -A $vmhba[$i]");
-		foreach ( @outs ) {
-			if ( /^   Name: (.+)/ ) {
-				&Log("[I] ----------\n");
-				&Log("[I] Before setting WWN#" . ($i +1) . " = [$1]\n");
-				&Log("[I] ----------\n");
-			}
-		}
-
-		# Setting WWN
-		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter set -A $vmhba[$i] -n $wwn[$i]");
-
-		# Checking WWN after setting it
-		&execution ("esxcli -u root -p " . $esxi_pw[$i] . " -s " . $esxi_ip[$i] . " -d $thumbprint iscsi adapter get -A $vmhba[$i]");
-		foreach ( @outs ) {
-			if ( /^   Name: (.+)/ ) {
-				&Log("[I] ----------\n");
-				&Log("[I] After setting  WWN#" . ($i +1) . " = [$1]\n");
-				&Log("[I] ----------\n");
-				# $wwn[$i] = $1;
-			}
-		}
-	}
-
-	chdir pop @dirstack;
-
-}
-
-
 #
 # Setup before.local and after.local on vMA hosts
 #
@@ -431,9 +369,6 @@ sub Save {
 		&Log("[E] failed to put init script\n");
 		return -1;
 	}
-
-	# Setup iSCSI Initiator IQN
-	&setIQN;
 
 	# Setup Authentication
 
