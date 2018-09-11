@@ -40,7 +40,6 @@ my $TMPL_CRED	= $TMPL_DIR . "/credstore.pl";
 # Development environment
 my @esxi_ip	= ('172.31.255.2', '172.31.255.3');		# ESXi IP address
 my @esxi_pw	= ('NEC123nec!', 'NEC123nec!');			# ESXi root password
-my @vma_hn	= ('VMA01', 'VMA02');				# vMA hostname
 my @vma_ip	= ('172.31.255.6', '172.31.255.7');		# vMA IP address
 my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA vi-admin password
 my @iscsi_ip	= ('172.31.255.11', '172.31.255.12');		# iSCSI IP address
@@ -58,6 +57,7 @@ my @ipw 	= ('172.31.255.31', '172.31.255.32');		# Target of IP Monitor
 #my $vmhba	= "vmhba33";			# iSCSI Software Adapter
 
 my @vmhba	= ('', '');							# iSCSI Software Adapter
+my @vma_hn	= ('', '');							# vMA hostname
 my @vma_dn	= ('', '');							# vMA Display Name
 
 my @vmx = ();		# Array of Hash of VMs for an ESXi
@@ -333,7 +333,7 @@ sub putInitScripts {
 			open(IN, "$TMPL_DIR/$file") or die;
 			open(OUT,">  $file") or die;
 			#binmode(IN);
-			binmode(OUT);
+			binmode(OUT);	# char code of Datastore name is UTF-8
 			while (<IN>) {
 				if (/%%VMK%%/)		{ s/$&/$esxi_ip[$n]/;}
 				if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
@@ -341,9 +341,9 @@ sub putInitScripts {
 			}
 			close(OUT);
 			close(IN);
-			my $ret = &execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$n] $file $vma_ip[$n]:/tmp");
-			if ($ret != 0) {
-				return 1;
+			if (&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$n] $file $vma_ip[$n]:/tmp")) {
+				&Log("[E] failed to put init script\n");
+				return -1;
 			}
 			unlink ( "$file" ) or die;
 		}
@@ -363,10 +363,27 @@ sub putInitScripts {
 }
 
 sub Save {
+	print "[I] Check ESXi, iSCSI, vMA nodes connectable and Get hostname of vMA ndoes\n";
+	for (my $i = 0; $i < 2; $i++) {
+		if (&execution(".\\plink.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] hostname")) {
+			&Log("[E] failed to access ESXi#" . ($i+1) .". Check IP or password.\n");
+			return -1;
+		}
+		if (&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] hostname")) {
+			&Log("[E] failed to access iscsi#" . ($i+1) .". Check IP or password.\n");
+			return -1;
+		}
+		if (&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] hostname")) {
+			&Log("[E] failed to access vMA#" . ($i+1) .". Check IP or password.\n");
+			return -1;
+		} else {
+			$vma_hn[$i] = shift @outs;
+			&Log("[I] vMA#" . ($i+1) . " hostname = [$vma_hn[$i]]\n");
+		}
+	}
+
 	# Setup before.local and after.local on vMA hosts
-	&putInitScripts;
-	if ($?) {
-		&Log("[E] failed to put init script\n");
+	if (&putInitScripts) {
 		return -1;
 	}
 
@@ -607,8 +624,6 @@ sub menu {
 		'set ESXi#2 IP            : ' . $esxi_ip[1],
 		'set ESXi#1 root password : ' . $esxi_pw[0],
 		'set ESXi#2 root password : ' . $esxi_pw[1],
-		'set vMA#1 hostname       : ' . $vma_hn[0],
-		'set vMA#2 hostname       : ' . $vma_hn[1],
 		'set vMA#1 IP             : ' . $vma_ip[0],
 		'set vMA#2 IP             : ' . $vma_ip[1],
 		'set vMA#1 vi-admin passwd: ' . $vma_pw[0],
@@ -656,9 +671,6 @@ sub select {
 	}
 	elsif ( $menu_vMA[$i] =~ /set ESXi#([1,2]) root password/ ) {
 		&setESXiPwd($1);
-	}
-	elsif ( $menu_vMA[$i] =~ /set vMA#([1,2]) hostname/ ) {
-		&setvMAhostname($1);
 	}
 	elsif ( $menu_vMA[$i] =~ /set vMA#([1,2]) IP/ ) {
 		&setvMAIP($1);
@@ -710,16 +722,6 @@ sub setESXiPwd{
 	chomp $ret;
 	if ($ret ne "") {
 		$esxi_pw[$i] = $ret;
-	}
-}
-
-sub setvMAhostname{
-	my $i = $_[0] - 1;
-	print "[" . $vma_hn[$i] . "] > ";
-	$ret = <STDIN>;
-	chomp $ret;
-	if ($ret ne "") {
-		$vma_hn[$i] = $ret;
 	}
 }
 
