@@ -657,6 +657,10 @@ sub select {
 		print "invalid (should be numeric)\n";
 		return -1;
 	}
+	if (!(($i <= $#menu_vMA) && ($i >= 0))) {
+		print "invalid number\n";
+		return -1
+	}
 	elsif ( $menu_vMA[$i] =~ /save and exit/ ) {
 		if ( &Save == 0 ) {
 			print "\nThe configuration files are saved in the \"conf\" directry.\nBye.\n";
@@ -809,6 +813,7 @@ sub addVM {
 	chdir pop @dirstack;
 
 	my $k = 0;
+	print "\n[$k] BACK\n";
 	for $i (0 .. $#vms) {
 		print "\n[ ESXi #" . ($i + 1) . " ]\n-----------\n";
 		for $j ( 0 .. $#{$vms[$i]} ) {
@@ -863,6 +868,7 @@ sub delVM {
 	my @list = ();
 
 	my $k = 0;
+	print "\n[$k] BACK\n";
 	for $i (0 .. $#vmx) {
 		print "\n[ ESXi #" . ($i + 1) . " ]\n-----------\n";
 		foreach (keys %{$vmx[$i]}) {
