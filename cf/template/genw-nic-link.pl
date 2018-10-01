@@ -17,7 +17,7 @@ my $vma1 = "%%VMA1%%";
 my $vma2 = "%%VMA2%%";
 
 # vSwitch to be monitored its link status
-my $vsw = "%%VSWITCH%%";
+my @vsws = ("vSwitch0", "%%VSWITCH%%");
 
 
 #-------------------------------------------------------------------------------
@@ -38,36 +38,55 @@ if ($? == 0) {
 }
 
 my @lines = ();
-my $cmd = "/usr/bin/esxcli --server $vmk network vswitch standard list --vswitch-name='$vsw' | grep Uplinks | sed -e 's/.*\: //'";
 $ENV{"HOME"} = "/root";
-if (&execution($cmd)){
-	exit 1;
-}
-my @nics = ();
-if ($lines[0] =~ /, /){
-	@nics = split(/, /, $lines[0]);
-} else {
-	push @nics, $lines[0];
-}
-my $cnt = 0;
-foreach (@nics){
-	$cmd = "/usr/bin/esxcli --server $vmk network nic list | grep $_ | awk {'print \$5'}";
-	if (&execution($cmd)) {
+
+# uniq @vsws
+my %cnts;
+@vsws = grep (!$cnts{$_}, @vsws);
+
+foreach (@vsws) {
+	if (&monitor($_)){
 		exit 1;
-	} elsif ($lines[0] eq "Up") {
-		# NIC Link UP
-		exit 0;
-	} elsif ($lines[0] eq "Down") {
-		# NIC Link DOWN
-		$cnt++;
 	}
 }
-#print "cnt = $cnt  \$#nics = $#nics\n";
-if ($cnt == $#nics + 1){
-	&Log("[E] vSwith [$vsw] lost all uplink\n");
-	exit 1;
-}
 exit 0;
+
+#-------------------------------------------------------------------------------
+sub monitor {
+	my $vsw = shift;
+	my $cmd = "/usr/bin/esxcli --server $vmk network vswitch standard list --vswitch-name='$vsw' | grep Uplinks | sed -e 's/.*\: //'";
+	if (&execution($cmd)){
+		exit 1;
+	}
+	my @nics = ();
+	if (@lines == 0) {
+		&Log ("[D] vSwitch [$vsw] may not exist\n");
+		return 0;
+	} elsif ($lines[0] =~ /, /) {
+		@nics = split(/, /, $lines[0]);
+	} else {
+		push @nics, $lines[0];
+	}
+	my $cnt = 0;
+	foreach (@nics){
+		$cmd = "/usr/bin/esxcli --server $vmk network nic list | grep $_ | awk {'print \$5'}";
+		if (&execution($cmd)) {
+			exit 1;
+		} elsif ($lines[0] eq "Up") {
+			# NIC Link UP
+			return 0;
+		} elsif ($lines[0] eq "Down") {
+			# NIC Link DOWN
+			$cnt++;
+		}
+	}
+	#print "cnt = $cnt  \$#nics = $#nics\n";
+	if ($cnt == $#nics + 1){
+		&Log("[E] vSwith [$vsw] lost all uplink\n");
+		return 1;
+	}
+	return 0;
+}
 
 #-------------------------------------------------------------------------------
 sub execution {
