@@ -25,8 +25,8 @@ sub setCredstore {
 	}
 
 	# Preparing SSH
-	&execution("cp /root/.ssh/id_rsa.pub /tmp");
-	&execution("chmod 666 /tmp/id_rsa.pub");
+	#&execution("cp /root/.ssh/id_rsa.pub /tmp");
+	#&execution("chmod 666 /tmp/id_rsa.pub");
 }
 #-------------------------------------------------------------------------------
 sub execution {

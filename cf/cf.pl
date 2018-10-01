@@ -45,7 +45,19 @@ my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA vi-admin password
 my @iscsi_ip	= ('172.31.255.11', '172.31.255.12');		# iSCSI IP address
 my @iscsi_pw	= ('NEC123nec!', 'NEC123nec!');			# iSCSI root password
 my $dsname	= "iSCSI";					# iSCSI Datastore
-my @ipw 	= ('172.31.255.31', '172.31.255.32');		# Target of IP Monitor
+my $vsw		= "vSwitch0";					# vSwitch for UCVM
+
+#my $i = 1;
+#&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i]   $vma_ip[$i]   \"echo $vma_pw[$i] | sudo -S sh -c \\\"cp /root/.ssh/id_rsa.pub /tmp\\\"\"");
+#&execution(".\\pscp.exe  -l vi-admin -pw $vma_pw[$i]   $vma_ip[$i]:/tmp/id_rsa.pub .\\id_rsa_vma_$i.pub");
+#&execution(".\\pscp.exe  -l root     -pw $iscsi_pw[$i] .\\id_rsa_vma_$i.pub $iscsi_ip[$i]:/tmp");
+#&execution(".\\plink.exe -l root     -pw $iscsi_pw[$i] $iscsi_ip[$i] \"a=`cat /tmp/id_rsa_vma_$i.pub`; grep \\\"\$a\\\" ~/.ssh/authorized_keys\"");
+#if ($? != 0) {
+#	&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"cat /tmp/id_rsa_vma_$i.pub >> ~/.ssh/authorized_keys\"");
+#}
+#&execution(".\\plink.exe -l root     -pw $iscsi_pw[$i] $iscsi_ip[$i] \"rm /tmp/id_rsa_vma_$i.pub\"");
+#unlink ( ".\\id_rsa_vma_$i.pub" ) or die;
+#exit;
 
 ## Initial environment
 #my @esxi_ip	= ('0.0.0.0', '0.0.0.0');	# ESXi IP address
@@ -422,6 +434,25 @@ sub putInitScripts {
 }
 
 sub Save {
+	print "[I] Check ESXi, iSCSI, vMA nodes connectable and Get hostname of vMA ndoes\n";
+	for (my $i = 0; $i < 2; $i++) {
+		if (&execution(".\\plink.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] hostname")) {
+			&Log("[E] failed to access ESXi#" . ($i+1) .". Check IP or password.\n");
+			return -1;
+		}
+		if (&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] hostname")) {
+			&Log("[E] failed to access iscsi#" . ($i+1) .". Check IP or password.\n");
+			return -1;
+		}
+		if (&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] hostname")) {
+			&Log("[E] failed to access vMA#" . ($i+1) .". Check IP or password.\n");
+			return -1;
+		} else {
+			$vma_hn[$i] = shift @outs;
+			&Log("[I] vMA#" . ($i+1) . " hostname = [$vma_hn[$i]]\n");
+		}
+	}
+
 	# Setup before.local and after.local on vMA hosts
 	&putInitScripts;
 
@@ -477,13 +508,11 @@ sub Save {
 	close(OUT);
 	close(IN);
 
-	# copy credstore_.pl
 	for (my $i = 0; $i<2; $i++){
 		# Put credstore controlling script to vMA
 		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $CFG_CRED $vma_ip[$i]:/tmp");
 
 		# Access to vMA and execute credstore_admin.pl
-		# ここで vMA ホスト上の /tmp に root ユーザの id_rsa.pub がコピーされる。後で消すこと。
 		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
 		if ($?) {
 			print "\n[E] failed to execute credstore_admin.pl\n";
@@ -493,7 +522,9 @@ sub Save {
 		&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] -m ssh-keyscan.sh");
 
 		# Get ssh public key from vMA, iSCSI
+		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] \"echo $vma_pw[$i] | sudo -S sh -c \\\"cp /root/.ssh/id_rsa.pub /tmp\\\"\"");
 		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i]:/tmp/id_rsa.pub .\\id_rsa_vma_$i.pub");
+		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] \"echo $vma_pw[$i] | sudo -S sh -c \\\"rm /tmp/id_rsa.pub\\\"\"");
 		&execution(".\\pscp.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i]:/root/.ssh/id_rsa.pub .\\id_rsa_iscsi_$i.pub");
 
 		# Put ssh public key to ESXi
@@ -501,6 +532,15 @@ sub Save {
 		&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa_vma_$i.pub $esxi_ip[1]:/tmp");
 		&execution(".\\pscp.exe -l root -pw $esxi_pw[0] .\\id_rsa_iscsi_$i.pub $esxi_ip[0]:/tmp");
 		&execution(".\\pscp.exe -l root -pw $esxi_pw[1] .\\id_rsa_iscsi_$i.pub $esxi_ip[1]:/tmp");
+
+		# Put vMA ssh public key to iSCSI and make /root/.ssh/authorized_keys for vMA
+		&execution(".\\pscp.exe -l root -pw $iscsi_pw[$i] .\\id_rsa_vma_$i.pub $iscsi_ip[$i]:/tmp");
+		&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"a=`cat /tmp/id_rsa_vma_$i.pub`; grep \\\"\$a\\\" ~/.ssh/authorized_keys\"");
+		if ($?) {
+			# create entry for vMA in authorized_keys in iSCSI when authorized_keys not exists or it does not have the entry for vMA node.
+			&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"cat /tmp/id_rsa_vma_$i.pub >> ~/.ssh/authorized_keys\"");
+		}
+		&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"rm /tmp/id_rsa_vma_$i.pub\"");
 
 		&execution("del credstore_$i.sh id_rsa_vma_$i.pub id_rsa_iscsi_$i.pub");
 	}
@@ -529,6 +569,7 @@ sub Save {
 	}
 	push @DIR, "$CFG_DIR/scripts/monitor.s/genw-remote-node";
 	push @DIR, "$CFG_DIR/scripts/monitor.s/genw-esxi-inventory";
+	push @DIR, "$CFG_DIR/scripts/monitor.s/genw-nic-link";
 	foreach (@DIR) {
 		mkdir "$_" if (!-d "$_");
 	}
@@ -543,8 +584,6 @@ sub Save {
 		if (/%%VMA2%%/)	{ s/$&/$vma_hn[1]/;}
 		if (/%%VMA1IP%%/)	{ s/$&/$vma_ip[0]/;}
 		if (/%%VMA2IP%%/)	{ s/$&/$vma_ip[1]/;}
-		if (/%%IPW1%%/)		{ s/$&/$ipw[0]/;}
-		if (/%%IPW2%%/)		{ s/$&/$ipw[1]/;}
 		#print "[D ] $_";
 		print OUT;
 	}
@@ -655,6 +694,44 @@ sub Save {
 	close(OUT);
 	close(IN);
 
+	open(IN, "$TMPL_DIR/genw-nic-link.pl") or die;
+	open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-nic-link/genw.sh") or die;
+	while (<IN>) {
+		#print "[D<] $_" if /%%/;
+		#if (/%%VMX%%/)		{ s/$&/$vmx[$i]{$vm}/;}
+		#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+		#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+		if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+		if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+		if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+		if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+		if (/%%VSWITCH%%/)	{ s/$&/$vsw/;}
+		#print "[D ] $_";
+		print OUT;
+	}
+	close(OUT);
+	close(IN);
+
+	open(IN, "$TMPL_DIR/genw-nic-link-preaction.sh") or die;
+	open(OUT,"> $CFG_DIR/scripts/monitor.s/genw-nic-link/preaction.sh") or die;
+	while (<IN>) {
+		#print "[D<] $_" if /%%/;
+		#if (/%%VMX%%/)		{ s/$&/$vmx[$i]{$vm}/;}
+		#if (/%%VMHBA%%/)	{ s/$&/$vmhba/;}
+		#if (/%%DATASTORE%%/)	{ s/$&/$dsname/;}
+		#if (/%%VMK1%%/)		{ s/$&/$esxi_ip[0]/;}
+		#if (/%%VMK2%%/)		{ s/$&/$esxi_ip[1]/;}
+		if (/%%VMA1%%/)		{ s/$&/$vma_ip[0]/;}
+		if (/%%VMA2%%/)		{ s/$&/$vma_ip[1]/;}
+		if (/%%ISCSI1%%/)	{ s/$&/$iscsi_ip[0]/;}
+		if (/%%ISCSI2%%/)	{ s/$&/$iscsi_ip[1]/;}
+		#if (/%%VSWITCH%%/)	{ s/$&/$vsw/;}
+		#print "[D ] $_";
+		print OUT;
+	}
+	close(OUT);
+	close(IN);
+
 	return 0;
 }
 
@@ -674,8 +751,7 @@ sub menu {
 		'set iSCSI#1 root password: ' . $iscsi_pw[0],
 		'set iSCSI#2 root password: ' . $iscsi_pw[1],
 		'set iSCSI Datastore name : ' . $dsname,
-		'set IP monitor#1 IP      : ' . $ipw[0],
-		'set IP monitor#2 IP      : ' . $ipw[1],
+		'set vSwitch name         : ' . $vsw,
 		'add VM',
 		'del VM',
 		'show VM'
@@ -724,8 +800,8 @@ sub select {
 	elsif ( $menu_vMA[$i] =~ /set iSCSI Datastore name/ ) {
 		&setDatastoreName;
 	}
-	elsif ( $menu_vMA[$i] =~ /set IP monitor#([1,2]) IP/ ) {
-		&setIPW($1);
+	elsif ( $menu_vMA[$i] =~ /set vSwitch name/ ) {
+		&setvSwitch($1);
 	}
 	elsif ( $menu_vMA[$i] =~ /add VM/ ) {
 		&addVM;
@@ -811,13 +887,12 @@ sub setDatastoreName{
 	}
 }
 
-sub setIPW {
-	my $i = $_[0] - 1;
-	print "[" . $ipw[$i] . "] > ";
+sub setvSwitch {
+	print "[" . $vsw . "] > ";
 	$ret = <STDIN>;
 	chomp $ret;
 	if ($ret ne "") {
-		$ipw[$i] = $ret;
+		$vsw = $ret;
 	}
 }
 
