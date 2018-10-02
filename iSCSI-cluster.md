@@ -186,7 +186,7 @@ This resource is used for the **special case**
   - change to [Operation Mode] from [Config Mode]
   - right click [Monitors] > [Add Monitor Resource]
   - [Info] section
-    - select [custom monitor] as [type] > input *genw-arpTable* > [Next]
+    - select [custom monitor] as [type] > input *genw-arpw* > [Next]
   - [Monitor (common)] section
     - input *30* as [Interval]
     - select [Active] as [Monitor Timing]
@@ -195,8 +195,8 @@ This resource is used for the **special case**
     - [Next]
   - [Monitor (special)] section
     - [Replace]
-      - select *genw-arpTable.sh* > [Open] > [Yes]
-    - input */opt/nec/clusterpro/log/genw-arpTable.log* as [Log Output Paht] > check [Rotate Log]
+      - select *genw-arpw.sh* > [Open] > [Yes]
+    - input */opt/nec/clusterpro/log/genw-arpw.log* as [Log Output Paht] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
     - select [Execute only the final action] as [Recovery Action]
