@@ -732,6 +732,17 @@ sub Save {
 	close(OUT);
 	close(IN);
 
+	#
+	# Applying the configuration
+	#
+	print "[I] ----------\n";
+	print "[I] Applying the configuration to vMA cluster\n";
+	print "[I] ----------\n";
+	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] -r .\\conf $vma_ip[0]:/tmp");
+	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcl -t -a\'\"");
+	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcfctrl --push -w -x /tmp/conf\'\"");
+	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcl -s -a\'\"");
+
 	return 0;
 }
 
@@ -776,7 +787,7 @@ sub select {
 	}
 	elsif ( $menu_vMA[$i] =~ /save and exit/ ) {
 		&Save;
-		print "\nThe configuration files are saved in the \"conf\" directry.\nBye.\n";
+		print "\nThe configuration has applied (the same has saved in the \"conf\" directry).\nBye.\n";
 		return 0;
 	}
 	elsif ( $menu_vMA[$i] =~ /set ESXi#([1..2]) IP/ ) {
