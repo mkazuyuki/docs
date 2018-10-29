@@ -74,12 +74,12 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 - 2 PC Servers for ESXi
 
   - recommended number of CPU Cores for each
-    
-	(Cores for VMkernel) + (Cores required for UC VMs) + (2 Cores for iSCSI) + (1 Core for vMA)
+
+	(Cores for VMkernel) + (Cores required for UC VMs) + (2 Cores for iSCSI) + (2 Cores for vMA)
 
   - recommended amount of Memory for each
 
-	(amount for VMkernel) + (required amount for UC VMs) + (2GB for iSCSI) + (600MB for vMA)
+	(amount for VMkernel) + (required amount for UC VMs) + (2GB for iSCSI) + (2GB for vMA)
 
   - recommended number of LAN Ports for each 
 
@@ -90,10 +90,10 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 	(amount for ESXi system) + (required amount for UC VMs) + (16GB for iSCSI VM) + (3GB for vMA VM)
 
 ## Product Versions
-- VMware vSphere Hypervisor 6.0 (VMware ESXi 6.0)
-- vSphere Management Assistant 6.0
-- Red Hat Enterprise Linux 7.2 x86_64 (or Cent OS 7.2)
-- EXPRESSCLUSTER X for Linux 3.3.3-1
+- VMware vSphere Hypervisor 6.5 (VMware ESXi 6.5)
+- vSphere Management Assistant 6.5
+- Red Hat Enterprise Linux 7.5 x86_64 (or Cent OS 7.5)
+- EXPRESSCLUSTER X for Linux 3.3.5-1
 
 ## Network configuration example
 ![Network configuraiton](HAUC-NW-Configuration.jpg)
@@ -101,10 +101,18 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 ## VM spec for iSCSI Target Cluster
 |||
 |---      |---          |
-| vCPU    | 2 or more   | 
-| Network | 3 ports     |
+| vCPU    | 4 or more	|
 | Memory  | 2GB or more |
 | vHDD    | 16GB for system + required amount for UC VMs<br>(recommendation is 500GB or less) |
+| Network | 3 ports     |
+
+## VM spec for vMA Cluster
+||||
+|---		|---		|---	|
+| vCPU		| 2		| need to edit parameter from 1 vCPU to 2 vCPU after deploying OVA |
+| Memory	| 2GB		| need to edit parameter from 600MB to 2GB after deploying OVA |
+| vHDD		| 3GB		| (default of OVA template) |
+| Network	| 1 port	| (default of OVA template) |
 
 
 ## Hosts Parameters example
@@ -114,28 +122,28 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 | Hostname			| esxi1			| esxi2			|
 | root password			| passwd		| passwd		|
 |				|			|			|
-| IP Address for Management	| 10.0.0.1		| 10.0.0.2		|
-| IP address for VMkernel1(*) 	| 192.168.0.1		| 192.168.0.2		|
+| IP Address for Management	| 172.31.255.2		| 172.31.255.3		|
+| IP address for VMkernel1(*) 	| 172.31.254.2		| 172.31.254.3		|
 | iSCSI Initiator WWN		| iqn.1998-01.com.vmware:1 | iqn.1998-01.com.vmware:2 |
-|||
+||||
 | **iSCSI Target Cluster**	| **Primary**		| **Secondary**	|
 | Hostname			| iscsi1		| iscsi2		|
 | root password			| passwd		| passwd		|
 |				|			|			|
-| IP Address for Public (iSCSI)	| 192.168.0.11/24	| 192.168.0.12/24	| 
-| FIP for iSCSI Target		| 192.168.0.10		| 192.168.0.10		|
-| IP Address for Mirroring	| 192.168.1.11/24	| 192.168.1.12/24	|
-| IP Address for Management	| 10.0.0.11/24  	| 10.0.0.12/24  	|
-|||
+| IP Address for Public (iSCSI)	| 172.31.254.11/24	| 172.31.254.12/24	|
+| FIP for iSCSI Target		| 172.31.254.10		| <--			|
+| IP Address for Mirroring	| 172.31.253.11/24	| 172.31.253.12/24	|
+| IP Address for Management	| 172.31.255.11/24  	| 172.31.255.12/24  	|
+||||
 | MD - Cluster Partition	| /dev/sdb1		| <-- |
 | MD - Data Partition		| /dev/sdb2		| <-- |
-| WWN of iSCSI Target		| iqn.2016-10.com.ec:1	| <-- |
+| WWN of iSCSI Target		| iqn.1996-10.com.ec:1	| <-- |
 ||||
 | **vMA Cluster**		| **Primary**		| **Secondary**	|
 | Hostname			| vma1			| vma2			|
 | vi-admin password		| passwd		| passwd		|
 |				|			|			|
-| IP Address			| 10.0.0.21		| 10.0.0.22		|
+| IP Address			| 172.31.255.6		| 172.31.255.7		|
 
 (*) for iSCSI Initiator
 
@@ -150,13 +158,15 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 	|		| Primary	| Secondary	|
 	|---		|---		|---		|
 	| Hostname	| esxi1		| esxi2		|
-	| Management IP	| 10.0.0.1	| 10.0.0.2	|
+	| Management IP	| 172.31.255.2	| 172.31.255.3	|
 
 - Configure ssh service to start automatically when ESXi start.
+<!--
   - On both vSphere Client for esxi1 and esxi2
   - click ESXi host icon in left pane.
   - Select [Configuration] tab > [Security Profile] > [Properties] of Services
   - Check [Start and stop with host] > push [Start] button and make "ssh" running.
+-->
 
 ## Setting up iSCSI Target Cluster
 
@@ -175,10 +185,11 @@ On each ESXi, set up a VM to have
 
 On both iSCSI Target VMs,
 
-- Install RHEL or CentOS 7.2 and configure
-	- hostname (e.g. iscsi1, iscsi2)
-	- IP address (e.g. 10.0.0.11, 192.168.0.11, 192.168.1.11 for iscsi1)
-	- block device for MD resoruce ( /dev/sdb1 for Cluster Partition and /dev/sdb2 for Data Partition).
+- Install RHEL or CentOS and configure
+	- hostname
+	- IP address
+	- block devices for MD resoruce ( /dev/sdb1 for Cluster Partition and /dev/sdb2 for Data Partition).
+	- disable *firewalld* and *selinux*
 
 - Install packages and EC licenses
 
@@ -192,12 +203,13 @@ On both iSCSI Target VMs,
 
 On the client PC,
 
-- Open Cluster Manager ( http://10.0.0.11:29003/ )
+- Open Cluster Manager ( http://172.31.255.11:29003/ )
 - Change to [Operation Mode] from [Config Mode]
 - Configure the cluster *iSCSI-Cluster* which have no failover-group.
-    - Configure two Heartbeat I/F
-      - 192.168.0.11 , 192.168.0.12 for primary interconnect
-      - 192.168.1.11 , 192.168.1.12 for secondary interconnect and mirror-connect
+    - Configure Heartbeat I/F
+      - 172.31.255.11 , 172.31.255.12 for primary interconnect
+      - 172.31.253.11 , 172.31.253.12 for secondary interconnect and mirror-connect
+      - 172.31.254.11 , 172.31.254.12 for thirdry   interconnect and iSCSI communication
 
 #### Enabling primary node surviving on the dual-active detection
 - Right click [iscsi-cluster] in left pane > [Properties]
@@ -214,7 +226,7 @@ On the client PC,
 
 #### Adding the MD resource
 - Right click [iSCSI-Cluster] in left pane > [Properties]
-- [Interconnect] tab > set [mdc1] for [MDC] and 10.0.0.0/24 network > [OK]
+- [Interconnect] tab > set [mdc1] for [MDC] and 172.31.253.0/24 network > [OK]
 - Right click [failover-iscsi] in left pane > [Add Resource]
 - Select [Type] as [mirror disk resource], set [Name] as [md1] then click [Next]
 - [Next]
@@ -251,7 +263,7 @@ On the client PC,
 - Select [Type] as [floating IP resource] then click [Next]
 - [Next]
 - [Next]
-- Set floating IP address as [ 192.168.0.10 ]
+- Set floating IP address as [ 172.31.254.10 ]
 - Click [Finish]
 
 #### Adding the execute resource for automatic MD recovery
@@ -291,7 +303,7 @@ This resource is enabling more automated MD recovery by supposing the node which
     - select [No operation] as [Final Action]
     - [Finish]
 
-#### Adding Monitor which make remote iSCSI VM and ECX keep online.
+#### Adding the custom monitor resource for keeping remote iSCSI VM and ECX online.
 - on Cluster Manager
   - change to [Operation Mode] from [Config Mode]
   - right click [Monitors] > [Add Monitor Resource]
@@ -311,6 +323,30 @@ This resource is enabling more automated MD recovery by supposing the node which
       - write $VMK1 as IP address for esxi1 which accessible from iscsi1
       - write $VMK2 as IP address for esxi2 which accessible from iscsi2
     - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Path] > check [Rotate Log]
+    - [Next]
+  - [Recovery Action] section
+    - select [Execute only the final action] as [Recovery Action]
+    - [Browse]
+      - [LocalServer] > [OK]
+    - select [No operation] as [Final Action]
+    - [Finish]
+
+#### Adding the custom monitor resource for updating arp table
+- on Cluster Manager
+  - change to [Operation Mode] from [Config Mode]
+  - right click [Monitors] > [Add Monitor Resource]
+  - [Info] section
+    - select [custom monitor] as [type] > input *genw-arpTable* > [Next]
+  - [Monitor (common)] section
+    - input *30* as [Interval]
+    - select [Active] as [Monitor Timing]
+    - [Browse] button
+      - select [fip] > [OK]
+    - [Next]
+  - [Monitor (special)] section
+    - [Replace]
+      - select *genw-arpTable.sh* > [Open] > [Yes]
+    - input */opt/nec/clusterpro/log/genw-arpTable.log* as [Log Output Paht] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
     - select [Execute only the final action] as [Recovery Action]
@@ -374,7 +410,7 @@ On iscsi1, create fileio backstore and configure it as backstore for the iSCSI T
 - Select [Storage Adapter] > [Add]
 - Configure [iSCSI Software Adapter]
   - set WWN [iqn.1998-01.com.vmware:1] for the adapter
-  - set IP address [*192.168.0.10* ] for the iSCSI Target
+  - set IP address [*172.31.254.10*] for the iSCSI Target
 - Select [Storage] > [Add Storage]
 - Create [iSCSI] as datastore in the iSCSI Target
 
@@ -384,7 +420,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 ### Deploying UC VMs on iSCSI datastore
 
 - Setup a VM (to be protected by ECX) on *esxi1* and name it *VM1* for example.
-  The VM should be saved on the shared storage.
+  The VM should be deployed on the iSCSI datastore.
 
 ### Setting up vMA Cluster
 
@@ -399,23 +435,16 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 		|---		|---		|---		|
 		| Hostname	| esxi1		| esxi2		|
 		| root password	| passwd1	| passwd2	|
-		| Management IP	| 10.0.0.1	| 10.0.0.2	|
+		| Management IP	| 172.31.255.2	| 172.31.255.3	|
 
     - vMA Example:
 
 		|		| Primary	| Secondary	| Note	|
 		|---		|---		|---		|---	|
 		| 3) Hostname	| vma1		| vma2		| need to be unique hostname ( "localhost" is inappropriate ) |
-		| 6) IP Address	| 10.0.0.21	| 10.0.0.22	| need to be unique and static IP Address |
+		| 6) IP Address	| 172.31.255.6	| 172.31.255.7	| need to be unique and static IP Address |
 
-    The IP address of vma1 and vma2 should be possible to communicate with Management IP of both ESXi and UC VM(s) to be protected.
-
-    - Example UC VM to be protected:
-
-		| Hostname	| IP address	|
-		|---		|---		|
-		| vm1   	| 10.0.0.101	|
-
+    The IP address of vma1 and vma2 should be possible to communicate with Management IP of both ESXi.
 
 #### Configuring credentials for accessing ESXi from vMA
 
@@ -423,14 +452,14 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     Register root password of both ESXi to enable vmware-cmd and esxcli command accessing ESXi without password.
 
     	> sudo bash
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -u root -p 'passwd1'
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 172.31.255.2 -u root -p 'passwd1'
     	New entry added successfully
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.2 -u root -p 'passwd2'
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 172.31.255.3 -u root -p 'passwd2'
     	New entry added successfully
     	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl list
     		Server	user Name
-    		10.0.0.1	root
-    		10.0.0.2	root
+    		172.31.255.2	root
+    		172.31.255.3	root
     		
     		Server 	Thumbprint
     	# exit
@@ -440,18 +469,18 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     setup ESXi thumbprint to use esxcli command
 
     	$ sudo bash
-    	# esxcli -s 10.0.0.1 -u root vm process list
-    	Connect to 10.0.0.1 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.1 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
+    	# esxcli -s 172.31.255.2 -u root vm process list
+    	Connect to 172.31.255.2 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 172.31.255.2 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
     	New entry added successfully
 
 - On vma2 console,
     setup ESXi thumbprint to use esxcli command
 
     	$ sudo bash
-    	# esxcli -s 10.0.0.2 -u root vm process list
-    	Connect to 10.0.0.2 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
-    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 10.0.0.2 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
+    	# esxcli -s 172.31.255.3 -u root vm process list
+    	Connect to 172.31.255.3 failed. Server SHA-1 thumbprint: AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC (not trusted).
+    	# /usr/lib/vmware-vcli/apps/general/credstore_admin.pl add -s 172.31.255.3 -t AD:5C:1E:DF:E6:39:18:B8:F9:65:EE:09:5A:7C:B4:E6:90:45:DB:DC
     	New entry added successfully
 
 - On vma1 and vma2 console
@@ -465,7 +494,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
 #### Configure ECX on Cluster Manager
 
-  - Access http://10.0.0.21:29003/ with web browser to open *Cluster Manager*
+  - Access http://172.31.255.6:29003/ with web browser to open *Cluster Manager*
   - on Cluster Manager
     - change to [Config Mode] from [Operation Mode]
     - [File] > [Cluster Generation Wizard]
@@ -488,7 +517,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
           it can be obtaind at vMA console as below.
 
     			$ sudo bash
-    			# vmware-cmd --server 10.0.0.1 -U root -l 
+    			# vmware-cmd --server 172.31.255.2 -U root -l
     		
     			/vmfs/volumes/588b1739-87411a6f-618f-002421a9b4be/vm1/vm1.vmx
 
@@ -530,8 +559,8 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
              - IP address for primary node of iSCSI Target Cluster as *IP1*,
 	       and for secondary node as *IP2*. These IP addresses should be accessible from vMA Cluster nodes.
              
-             		IP1="10.0.0.11"
-             		IP2="10.0.0.12"
+             		IP1="172.31.255.6"
+             		IP2="172.31.255.7"
              
         - [Tuning] > [Maintenance] tab > Input [*/opt/nec/clusterpro/log/exec-VMn-datastore.log*] as [Log Output Path] > Check [Rotate Log] > [OK]
         - [Finish]
@@ -559,19 +588,19 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
   - copy public key of root user to esxi1 and esxi2
 
     	> sudo bash
-    	# scp ~/.ssh/id_rsa.pub 10.0.0.1:/etc/ssh/keys-root/
-    	# scp ~/.ssh/id_rsa.pub 10.0.0.2:/etc/ssh/keys-root/
+    	# scp ~/.ssh/id_rsa.pub 172.31.255.2:/etc/ssh/keys-root/
+    	# scp ~/.ssh/id_rsa.pub 172.31.255.3:/etc/ssh/keys-root/
 
   - remote login to esx1 and esxi2 as root user and configure ssh for remote execution from vma1.
 
-    	# ssh 10.0.0.1
+    	# ssh 172.31.255.2
     	Password:
 
     	# cd /etc/ssh/keys-root
     	# cat id_rsa.pub >> authorized_keys
     	# rm id_rsa.pub
     	# exit
-    	# ssh 10.0.0.2
+    	# ssh 172.31.255.3
     	Password:
 
     	# cd /etc/ssh/keys-root
@@ -581,7 +610,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     	# exit
     	> exit
 
-- On vma2 console (do the same for esxi1 (10.0.0.1))
+- On vma2 console (do the same for esxi1 (172.31.255.2))
   - copy public key of root user to esxi1 and esxi2
   - remote login to esxi1 and esxi2 as root user and configure ssh for remote execution from vma2.
 
@@ -620,32 +649,35 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
     - select [No operation] as [Final Action]
     - [Finish]
 
-#### Adding Network Monitor for VMn
+#### Adding the monitor resouce checking the link status of vmnics connected to vSwitch0 and the link status of vmnics connected to target VMs to be protected
 - on Cluster Manager
   - right click [Monitors] > [Add Monitor Resource]
   - [Info] section
-    - select [ip monitor] as [type] > input *ipw-VMn* > [Next]
+    - select [custom monitor] as [type] > input *genw-nic-link* > [Next]
   - [Monitor (common)] section
-    - input *600* as [Wait Time to Start Monitoring]
-    - select [Active] as [Monitor Timing]
-    - [Browse] button
-      - [exec-VMn] > [OK]
+    - input *5* as [Interval]
+    - input *30* as [Timeout]
+    - select [Always] as [Monitor Timing]
     - [Next]
   - [Monitor (special)] section
-    - [Add]
-      - input IP address of VMn (e.g. 10.0.0.101)  
-        **[ Note ]**  Adding NIC on vma1 and vma2 is required if the VMn belongs to the defferent network than vma1 and vma2.
-	Configure the IP address for the additional NIC to have the same network address with VMn.  
-		/etc/sysconfig/networking/devices/ifcfg-eth1  
-	and symbolic link file  
-		/etc/sysconfig/network/ifcfg-eth1  
-	should be configured. 
-      - [OK]
+    - [Replace]
+      - select *genw-nic-link.pl* > [Open] > [Yes]
+    - [Edit]
+      - write $vma1 as IP address for vma1
+      - write $vma2 as IP address for vma2
+      - write $vmk1 as IP address for esxi1
+      - write $vmk2 as IP address for esxi2
+    - input */opt/nec/clusterpro/log/genw-nic-link.log* as [Log Output Path] > check [Rotate Log]
     - [Next]
   - [Recovery Action] section
-    - select [Executing failover to the recovery target] as [Recovery Action]
+    - select [Execute only the final action] as [Recovery Action]
     - [Browse]
-      - select [failover-VMn] > [OK]
+      - [LocalServer] > [OK]
+    - check [Execute Script before Final Action]
+      - push [Script Settings]
+        - in *Edit Script* dialog, push [Replace] button.
+          - select *genw-nic-link-preaction.sh* > [Open] > {Yes]
+    - select [Stop the cluster service and shutdown OS] as [Final Action]
     - [Finish]
 
 #### Adding Monitor which make remote vMA VM and ECX keep online.
@@ -686,6 +718,14 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 	- esxi1 : iscsi1 then vma1
 	- esxi2 : iscsi2 then vma2
 
+- Disable ATS Heartbeat for avoiding sudden disconnection of iSCSI Datastore.
+
+  - On both  ESXi console, execute
+
+		# esxcli system settings advanced set -i 0 -o /VMFS3/UseATSForHBOnVMFS3
+
+    Refer to [VMware KB 2113956](https://kb.vmware.com/s/article/2113956) for enabling/disabling ATS Heartbet
+
 <!-- TBD -->
 
 - The network for iSCSI and Data Mirroring should use physically indepenent network if possible. Configure logically independent at least.
@@ -701,10 +741,8 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 ## Common Maintenance Tasks
 
 ### The graceful shutdown procedure for both ESXi
-1. Issue cluster shutdown for the vMA Cluster.  
-	Then all the UC VMs and vMA VMs are shutted down.
-2. Issue cluster shutdown for the iSCSI Cluster.  
-	Then both iSCSI Target VMs are shutted down.
+1. Issue cluster shutdown for the vMA Cluster. Then all the UC VMs and vMA VMs are shutted down.
+2. Issue cluster shutdown for the iSCSI Cluster. Then both iSCSI Target VMs are shutted down.
 3. Issue shutdown for both the ESXi.
 
 ### Stopping one of vMA Cluster node
@@ -716,21 +754,21 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 Operation flow of "Deleting UC VM" then "Adding UC VM" can be used for version up operation for UC VM.
 
 #### Deleting VM
-- Open Cluster Manager for vMA Cluster ( http://10.0.0.21:29003/ )
+- Open Cluster Manager for vMA Cluster ( http://172.31.255.6:29003/ )
 - Change to [Config Mode] from [Operation Mode]
-- In left pane, click [failover-VMn] to be deleted 
+- In left pane, click [failover-VMn] to be deleted
 - In right pane, right click [exec-VMn] > [Remove Resource] > [Yes]
 - In left pane, right click [failover-VMn] > [Remove Group] > [Yes]
 - [File] menu > [Apply the Configuration File]
 
 #### Adding VM
-- Open Cluster Manager for vMA Cluster ( http://10.0.0.21:29003/ )
+- Open Cluster Manager for vMA Cluster ( http://172.31.255.6:29003/ )
 - Change to [Config Mode] from [Operation Mode]
 - Right click [Groups] in left pane > [Add Group]
 - Basic Settings : Set [Name] as [*failover-VMn*]  > [Next]
 - Startup Servers : [Next]
 - Group Attributes : [Next]
-- Group Resources : [Add]	
+- Group Resources : [Add]
   - Info : Select [execute resource] as [Type] > input *exec-VMn* as [Name] > [Next]
   - Dependency : [Next]
   - Recovery Operation : Select [Stop the cluster service and regoot OS] as [Final Action] in [Recovery Operation at Deactivation Failure Detection] > [Next]
@@ -739,10 +777,10 @@ Operation flow of "Deleting UC VM" then "Adding UC VM" can be used for version u
       - the path to the VM configuration file (.vmx) as *@cfg_paths*.  
         it can be obtained at vMA console like below.
 
-      			$ sudo bash
-      			# vmware-cmd --server 10.0.0.1 -U root -l 
-    		
-    			/vmfs/volumes/588b1739-87411a6f-618f-002421a9b4be/vm1/vm1.vmx
+        	$ sudo bash
+        	# vmware-cmd --server 172.31.255.2 -U root -l
+        	
+        	/vmfs/volumes/588b1739-87411a6f-618f-002421a9b4be/vm1/vm1.vmx
 
       - Datastore name as *$datastore* which the VM to be protected is stored.
       - IP addresses for VMkernel Port for both ESXi as *$vmk1* and *$vmk2* which is accessible from the vMA Cluster nodes.
@@ -758,4 +796,5 @@ Operation flow of "Deleting UC VM" then "Adding UC VM" can be used for version u
 
 ## Revision history
 
-2017.08.28 Miyamto Kazuyuki	1st issue
+- 2017.08.28 Miyamoto Kazuyuki	1st issue
+- 2018.10.22 Miyamoto Kazuyuki	2nd issue
