@@ -111,6 +111,9 @@ sub AddNode {
 		}
 	}
 
+	#
+	# Failover Policy
+	#
 	if ($esxidx == 1) {
 		$fop =	"		<policy name=\"$vma_hn[1]\"><order>0</order></policy>\n".
 			"		<policy name=\"$vma_hn[0]\"><order>1</order></policy>\n";
@@ -434,7 +437,7 @@ sub putInitScripts {
 }
 
 sub Save {
-	print "[I] Check ESXi, iSCSI, vMA nodes connectable and Get hostname of vMA ndoes\n";
+	print "[I] Check ESXi, iSCSI nodes connectable";
 	for (my $i = 0; $i < 2; $i++) {
 		if (&execution(".\\plink.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] hostname")) {
 			&Log("[E] failed to access ESXi#" . ($i+1) .". Check IP or password.\n");
@@ -444,13 +447,7 @@ sub Save {
 			&Log("[E] failed to access iscsi#" . ($i+1) .". Check IP or password.\n");
 			return -1;
 		}
-		if (&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] hostname")) {
-			&Log("[E] failed to access vMA#" . ($i+1) .". Check IP or password.\n");
-			return -1;
-		} else {
-			$vma_hn[$i] = shift @outs;
-			&Log("[I] vMA#" . ($i+1) . " hostname = [$vma_hn[$i]]\n");
-		}
+		# checking vMA node connectivity was done at addVM()
 	}
 
 	# Setup before.local and after.local on vMA hosts
@@ -908,6 +905,23 @@ sub setvSwitch {
 }
 
 sub addVM {
+
+	# Check vMA nodes connectable and get hostname
+	if (( $vma_hn[0] eq '' ) || ( $vma_hn[1] eq '' )) {
+		print "\n[I] Getting hostname of vMA\n";
+		print "-----------\n";
+		for (my $i = 0; $i < 2; $i++) {
+			if (&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] hostname")) {
+				&Log("[E] failed to access vMA#" . ($i+1) .". Check IP or password.\n");
+				return -1;
+			} else {
+				$vma_hn[$i] = shift @outs;
+				&Log("[I] vMA#" . ($i+1) . " hostname = [$vma_hn[$i]]\n");
+			}
+		}
+		print "-----------\n";
+	}
+
 	my @dirstack = ();
 	push @dirstack, getcwd;
 	chdir $vmcmd_dir;

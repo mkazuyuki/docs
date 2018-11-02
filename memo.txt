@@ -5,8 +5,6 @@
 2018.05.28	iSCSI Target Cluster のOS時刻を UTC にする。vMA と iSCSI Cluster の ESXi との時刻同期設定を ON にする。
 2018.06.07	iSCSI HBTO=35s (vMA HBTO = 90s), 172.31.255.31, 32 の VM を作って、iSCSI用 vSwitch につなげる。
 2018.06.11	vm-stop.pl は 環境変数 が CLP_FACTOR==GROUPFAILOVER の時 (shutdown ではなく) power off を実行する。
-2018.06.15	iSCSI Cluster に arpw を追加する。NPから復帰して、iscsi02 が落ちると、ESXi2 は ARPキャッシュがタイムアウトするまで iscsi02 を iSCSI Target だと思い込むから。
-2018.06.18	iSCSI Cluster の HBTO を 50秒、ipw の INT を 10秒に変更する。
 --------
 ★	ESXi への root login が lock down されると、after.local が 
 
@@ -67,3 +65,10 @@
 # 2018.02.12 vm-stop.pl で　unregister 済みを検出した場合、exit 1 となるのを exit 0 となるように修正する。 (vm-start.pl で起動済みの場合も要確認)
 
 # 2018.05.16 targetcli は抜ける前に cd / が必要
+
+# 2018.06.15	iSCSI Cluster に arpw を追加する。NPから復帰して、iscsi02 が落ちると、ESXi2 は ARPキャッシュがタイムアウトするまで iscsi02 を iSCSI Target だと思い込むから。
+  2018.10.29	のべつ幕無しに arpw で GARP を投げると、両系活性で VM が走っている最中に NW 復帰 → ESXi2 は vMA02 停止に伴う VM停止前に iscsi01 からの GARP を受けて iscsi01 の提供する datastore へアクセスするようになり、vmdk を破壊する、というシナリオが起こりうる。このため、iSCSI Cluster に genw-arpTable を追加して、ESXi2 が iSCSI Datastore を失った場合に arping で GARP を投げるようにした。
+
+# 2018.06.18	iSCSI Cluster の HBTO を 50秒、ipw の INT を 10秒に変更する。
+  2018.10.29	VMkernel Port の multi homing を排除するために ipw と ipw のアクセス先となる VMkernel Port を削除。代替として genw-nic-link による vmnic の link status 監視を vMA Cluster に追加、これに iSCSI VM の停止(に伴うfailover)も実行させる。
+--------
