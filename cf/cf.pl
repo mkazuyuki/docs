@@ -543,7 +543,7 @@ sub Save {
 	}
 
 	for (my $i = 0; $i<2; $i++){
-		# Access to ESXi and make /etc/ssh/keys-root/authorized_keys
+		# Access to ESXi, make /etc/ssh/keys-root/authorized_keys, and set ATS Heartbeat disable.
 		&execution(".\\plink.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] -m $SCRIPT_DIR/sshmk.sh");
 	}
 

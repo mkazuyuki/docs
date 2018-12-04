@@ -24,3 +24,6 @@ rm /tmp/id_rsa_vma_0.pub
 rm /tmp/id_rsa_vma_1.pub
 rm /tmp/id_rsa_iscsi_0.pub
 rm /tmp/id_rsa_iscsi_1.pub
+
+esxcli system settings advanced set -i 0 -o /VMFS3/UseATSForHBOnVMFS5
+esxcli system settings advanced list -o /VMFS3/UseATSForHBonVMFS5
