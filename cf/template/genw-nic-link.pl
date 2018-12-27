@@ -54,7 +54,7 @@ exit 0;
 #-------------------------------------------------------------------------------
 sub monitor {
 	my $vsw = shift;
-	my $cmd = "/usr/bin/esxcli --server $vmk network vswitch standard list --vswitch-name='$vsw' | grep Uplinks | sed -e 's/.*\: //'";
+	my $cmd = "/usr/bin/esxcli --server $vmk network vswitch standard list --vswitch-name='$vsw' | grep Uplinks";
 	if (&execution($cmd)){
 		exit 1;
 	}
@@ -62,9 +62,14 @@ sub monitor {
 	if (@lines == 0) {
 		&Log ("[D] vSwitch [$vsw] may not exist\n");
 		return 0;
+	} elsif ($lines[0] =~ /Uplinks:\s*$/) {
+		&Log ("[E] No uplink found\n");
+		exit 1;
 	} elsif ($lines[0] =~ /, /) {
+		$lines[0] =~ s/.*Uplinks:\s*//;
 		@nics = split(/, /, $lines[0]);
 	} else {
+		$lines[0] =~ s/.*Uplinks:\s*//;
 		push @nics, $lines[0];
 	}
 	my $cnt = 0;
