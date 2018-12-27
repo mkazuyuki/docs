@@ -736,9 +736,9 @@ sub Save {
 	print "[I] Applying the configuration to vMA cluster\n";
 	print "[I] ----------\n";
 	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] -r .\\conf $vma_ip[0]:/tmp");
-	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcl -t -a\'\"");
+	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcl --suspend\'\"");
 	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcfctrl --push -w -x /tmp/conf\'\"");
-	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcl -s -a\'\"");
+	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcl --resume\'\"");
 
 	return 0;
 }
