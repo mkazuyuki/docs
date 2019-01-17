@@ -87,7 +87,13 @@ On both iSCSI Target Nodes,
 		# rpm -ivh expresscls.*.rpm
 		# clplcnsc -i [base-license-file] -p BASE33
 		# clplcnsc -i [replicator-license-file] -p REPL33
+
+- Apply EC update (if you need)
+
+- Reboot
+
 		# reboot
+
 
 ### Configuring iSCSI Target Cluster
 
