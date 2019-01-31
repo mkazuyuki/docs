@@ -539,6 +539,9 @@ sub Save {
 		}
 		&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"rm /tmp/id_rsa_vma_$i.pub\"");
 
+		# Configure known_hosts file on vMA to have iSCSI host-key
+		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] \"echo $vma_pw[$i] | sudo -S sh -c 'ssh-keygen -R $iscsi_ip[$i]; ssh-keyscan -t ecdsa $iscsi_ip[$i] >> ~/.ssh/known_hosts'\"");
+
 		&execution("del credstore_$i.sh id_rsa_vma_$i.pub id_rsa_iscsi_$i.pub");
 	}
 
