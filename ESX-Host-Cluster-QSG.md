@@ -722,7 +722,7 @@ Do the same for esxi2. Use [*iqn.1998-01.com.vmware:2*] as WWN for its adapter.
 
   - On both  ESXi console, execute
 
-		# esxcli system settings advanced set -i 0 -o /VMFS3/UseATSForHBOnVMFS3
+		# esxcli system settings advanced set -i 0 -o /VMFS3/UseATSForHBOnVMFS5
 
     Refer to [VMware KB 2113956](https://kb.vmware.com/s/article/2113956) for enabling/disabling ATS Heartbet
 
