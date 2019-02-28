@@ -135,6 +135,7 @@ The general procedure to deploy EXPRESSCLUSTER X on two ESXi server machines (Pr
 | IP Address for Mirroring	| 172.31.253.11/24	| 172.31.253.12/24	|
 | IP Address for Management	| 172.31.255.11/24  	| 172.31.255.12/24  	|
 ||||
+| Heartbeat Timeout		| 50 sec		| <-- ||
 | MD - Cluster Partition	| /dev/sdb1		| <-- |
 | MD - Data Partition		| /dev/sdb2		| <-- |
 | WWN of iSCSI Target		| iqn.1996-10.com.ec:1	| <-- |
