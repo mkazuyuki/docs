@@ -14,6 +14,9 @@
 # chmod 755 /etc/init.d/after.local
 #
 
+HOME=/root
+logger -t expresscls "**** entr after.local ****"
+
 ####
 # IP address of VMkernel port on the host ESXi.
 vmk=%%VMK%%
@@ -22,9 +25,7 @@ vmk=%%VMK%%
 # Datastore name for iSCSI shared disk which the host ESXi access.
 DatastoreName=%%DATASTORE%%
 
-
 # Unregistering "invalid VMs" and "existing UC VMs" from ESXi inventory
-HOME=/root
 ssh -i ~/.ssh/id_rsa $vmk "
 for a in \$(vim-cmd vmsvc/getallvms 2>&1 | grep invalid | awk '{print \$4}' | cut -d \\' -f2); do
 	logger -t expresscls \"unregister invalid VM ID[\$a]\"
@@ -56,3 +57,4 @@ while [ 1 ];do
         fi
         sleep 10
 done
+logger -t expresscls "**** exit after.local ****"

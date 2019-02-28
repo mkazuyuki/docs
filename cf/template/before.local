@@ -10,6 +10,9 @@
 # chmod 744 /etc/init.d/before.local
 #
 
+HOME=/root
+logger -t expresscls "**** entr before.local ****"
+
 ####
 # IP address of VMkernel port on the local ESXi.
 vmk=%%VMK%%
@@ -19,9 +22,6 @@ vmk=%%VMK%%
 DatastoreName=%%DATASTORE%%
 
 # Unregistering "invalid VMs" and "existing UC VMs" from ESXi inventory
-HOME=/root
-logger -t expresscls "**** entr  before.local ****"
-
 ssh -i ~/.ssh/id_rsa $vmk "
 IFS='
 '

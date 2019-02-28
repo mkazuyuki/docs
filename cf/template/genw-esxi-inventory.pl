@@ -117,6 +117,7 @@ sub Monitor{
 			&Log("[D] \t$b\n");
 		}
 		&Log("[I] on LOCAL  [$vmk] VM ID [$_] was unregistered\n");
+		execution("clplogcmd -m \"invalid VM ID [$_] was unregistered on [$vmk]\n\"");
 	}
 
 	# Checking Powerstatus of each registered VMs on Local node
@@ -166,8 +167,9 @@ sub Monitor{
 						&Log("[D] \t$_\n");
 					}
 					&Log("[I] on LOCAL  [$vmk] [$a][$vmx{$a}] was unregistered\n");
+					execution("clplogcmd -m \"VM [$vmx{$a}][$a] was unregistered on [$vmk]\n\"");
 				} else {
-					&Log("[D} on LOCAL  [$vmk] do nothing for [$a][$vmx{$a}]\n");
+					&Log("[D] on LOCAL  [$vmk] do nothing for [$a][$vmx{$a}]\n");
 				}
 			}
 		}
