@@ -40,12 +40,12 @@ fi
 ip address | grep %%VMA1%%
 if [ $? -eq 0 ]; then
 	echo "Killing iSCSI-1"
-	ssh %%ISCSI1%% "clplogcmd -m \"vMA#1 kills iSCSI#1\" --alert --syslog -l ERROR; clpdown"
+	ssh %%ISCSI1%% "clplogcmd -m \"vMA#1 kills iSCSI#1\" --alert --syslog -l ERROR; clpdown -r"
 fi
 ip address | grep %%VMA2%%
 if [ $? -eq 0 ]; then
 	echo "Killing iSCSI-2"
-	ssh %%ISCSI2%% "clplogcmd -m \"vMA#2 kills iSCSI#2\" --alert --syslog -l ERROR; clpdown"
+	ssh %%ISCSI2%% "clplogcmd -m \"vMA#2 kills iSCSI#2\" --alert --syslog -l ERROR; clpdown -r"
 fi
 
 echo "EXIT"
