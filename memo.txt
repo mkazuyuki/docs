@@ -6,6 +6,23 @@
 2018.06.07	iSCSI HBTO=35s (vMA HBTO = 90s), 172.31.255.31, 32 の VM を作って、iSCSI用 vSwitch につなげる。
 2018.06.11	vm-stop.pl は 環境変数 が CLP_FACTOR==GROUPFAILOVER の時 (shutdown ではなく) power off を実行する。
 --------
+2019.04.15	ESXi6.7 supportability of vCLI/vMA versions
+	ws2016 + vCLI6.0
+		vmware-cmd	ok
+		esxcli		ng	Connect to 192.168.137.21 failed with ssl error0x8
+
+	ws2016 + vCLI6.7
+		vmware-cmd	ok
+		esxcli		ok
+
+	vMA6.0
+		vmware-cmd	ng	Server version unabailable at 'http://172.31.255.2:443/sdk/vimService.wsdl' at /usr/lib/perl5/5.10.0/VMware/VICommon.pm line 726, <STDIN> line2.
+		esxcli		ng	Connect to 172.31.255.2 failed with ssl error 0x8
+
+	vMA6.5
+		vmware-cmd	??	
+		esxcli		??	
+--------
 ★	ESXi への root login が lock down されると、after.local が 
 
 		esxcli --server $vmk storage filesystem list | cut -d' ' -f3 | grep $DatastoreName
@@ -15,9 +32,9 @@
 	after.local が要らなくなっている可能性があるので、確認すること。
 
 ->	after.local がやっていること
-		- Surprise PowerOff > PowerOn で ESXi に(無効な)VM登録が残るへの対策を意図して
+		- ESXi の Surprise PowerOff > PowerOn で (無効な)VM登録が残るへの対策を意図して
 			- invalid VM の削除
-			- iSCSI Datastore に入っていて、かつ、ESXi に登録されている VM の電源断 > 登録削除
+			- iSCSI Datastore に入っていて、かつ、ESXi の inventory に登録されている VM の電源断 > 登録削除
 
 	start.sh (vm-start.pl) がやっていること
 		- iSCSI Datastore が見つからなければ、vmhba をリスキャンして iSCSI接続を促す
