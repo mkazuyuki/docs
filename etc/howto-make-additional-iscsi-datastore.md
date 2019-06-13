@@ -1,5 +1,11 @@
 # Howto make additional iSCSI Datastore for HAUC
 
+- [Preparing](#preparing)
+- [Creating block device for iSCSI backstore](#creating-block-device-for-iscsi-backstore)
+- [Configuring iSCSI Target](#configuring-iscsi-target)
+- [Adding MD resource on iSCSI Cluster](#adding-md-resource-on-iscsi-cluster)
+- [Adding Datastore on ESXi](#adding-datastore-on-esxi)
+
 ## Preparing
 
 - Open Cluster WebManager for vMA Cluster ( http://172.31.255.6:29003/ )
@@ -15,11 +21,9 @@
 - Open putty and login to iSCSI VMs.
 
   **on both iSCSI VM**
-
-  - Make partitions on the vHDD
-    - 1GB for cluster-partition.
-    - Rest of the available space for data-partition.
+  - Make partitions oc the vH-D  - -est of-the-iscsi-ble space for data-partition.
   - Create the mount point for data-partition then format the data-partition. (assuming sdc2 as data-partition here and after)
+
 
 	for iscsi01
 
@@ -101,6 +105,6 @@
 - Change to [Operation Mode] from [Config Mode]
 - Start the *failover-iscsi*
 
-## Adding new datastore on both ESXi
-**On vSphere Host Client**
+## Adding datastore on ESXi
+**On vSphere Host Client for both ESXi**
 - Add the new datastore at [Storage] > [Adapters]
