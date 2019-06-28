@@ -2,7 +2,7 @@
 
 ----
 
-This guide provides how to create Management VM Cluster cluster on EXPRESSCLUSTER for Linux.
+This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Linux.
 
 ----
 ## Versions
