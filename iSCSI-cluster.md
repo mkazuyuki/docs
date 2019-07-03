@@ -145,8 +145,8 @@ This resource is enabling more automated MD recovery by supposing the node which
 - Select [EXEC resource] as [Type] > set *exec-md-recovery* as [Name] > [Next]
 - **Uncheck** [Follow the default dependency] > [Next]
 - [Next]
-- Select start.sh then click [Replace]
-- Select [*exec-md-recovery.pl*]
+- Select start.sh then click [Replace] > Select [*exec-md-recovery.pl*]
+- [Tuning] > [Maintenance] tab > input */opt/nec/clusterpro/log/exec-md-recovery.log* as [Log Output Path] > check [Rotate Log] > [OK]
 - [Finish]
 
 #### Adding the MD resource
