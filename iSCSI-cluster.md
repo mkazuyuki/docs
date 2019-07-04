@@ -108,9 +108,9 @@ On the client PC,
 - Configure the cluster *iSCSI-Cluster* which have no failover-group.
 
 	- [Cluster generation wizard]
-	- Input *iSCSI-Cluster* as [Cluster name], [English] as Language > > [Next]
+	- Input *iSCSI-Cluster* as [Cluster name], [English] as Language > [Next]
 	- [Add] > input *172.31.255.12* as [IP Address of secondary server] > [OK]
-	- Confirm *iscsi02* was added > [Next]
+	- Confirm *iscsi2* was added > [Next]
 	- Configure Interconnect
 		
 		| Priority	| MDC	| iscsi1	| iscsi2	|
