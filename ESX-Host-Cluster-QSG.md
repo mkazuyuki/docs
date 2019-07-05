@@ -126,40 +126,41 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 - Deploy iSCSI OVA on both ESXi and boot them.
 
 ### Setting up ESXi - iSCSI Initiator
-  - Connect to ESXi-A by ssh client (e.g. putty etc) then run the below commands.
+  - Connect to ESXi-A by ssh client (e.g. putty etc) then run the below script.
 
-		IQN1='iqn.1998-01.com.vmware:1'
-		IQN2='iqn.1998-01.com.vmware:2'
+		#!/bin/sh
+
+		IQN='iqn.1998-01.com.vmware:1'
 		ADDR='172.31.254.10:3260'
 
 		# Enabling iSCSI Initiator
 		esxcli iscsi software set --enabled=true
 		VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
-		esxcli iscsi adapter set -n ${IQN1} -A ${VMHBA}
+		esxcli iscsi adapter set -n ${IQN} -A ${VMHBA}
 		esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
-		/etc/init.d/hostd restart
-		/etc/init.d/vpxa restart
 		esxcli storage core adapter rescan --all
 
-		# Creating the partition
-		DEVICE=`esxcli storage core device list | grep "Display Name: LIO-ORG" | sed -r 's/^.*\((.*)\)/\1/'`
-		partedUtil mklabel ${DEVICE} msdos
-		END_SECTOR=$(eval expr $(partedUtil getptbl ${DEVICE} | tail -1 | awk '{print $1 " \\* " $2 " \\* " $3}') - 1)
-		partedUtil "setptbl" "${DEVICE}" "gpt" "1 2048 ${END_SECTOR} AA31E02A400F11DB9590000C2911D1B8 0"
+		# Create then format the partition
+		i=1
+		for DEVICE in `esxcli storage core device list | grep "Display Name: LIO-ORG" | sed -r 's/^.*\((.*)\)/\1/' | xargs`; do
+			END_SECTOR=$(eval expr $(partedUtil getptbl /vmfs/devices/disks/${DEVICE} | tail -1 | awk '{print $1 " \\* " $2 " \\* " $3}') - 1)
+			partedUtil setptbl "/vmfs/devices/disks/${DEVICE}" "gpt" "1 2048 ${END_SECTOR} AA31E02A400F11DB9590000C2911D1B8 0"
+			/sbin/vmkfstools -C vmfs5 -b 1m -S iSCSI${i}  /vmfs/devices/disks/${DEVICE}:1
+			i=$(($i + 1))
+		done
 
-		# Formatting the partition
-		/sbin/vmkfstools -C vmfs5 -b 1m -S $(hostname -s)-local-datastore ${DEVICE}:1
+  - Connect to ESXi-B by ssh client then run the below script.
 
-  - Connect to ESXi-B by ssh client then run the below commands.
+		#!/bin/sh
+
+		IQN='iqn.1998-01.com.vmware:2'
+		ADDR='172.31.254.10:3260'
 
 		# Enabling iSCSI Initiator
 		esxcli iscsi software set --enabled=true
-		esxcli iscsi adapter list
 		VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
-		esxcli iscsi adapter set -n iqn.1998-01.com.vmware:2 -A ${VMHBA}
-		esxcli iscsi adapter discovery sendtarget add --address=172.31.254.10:3260 --adapter=${VMHBA}
-		/etc/init.d/hostd restart
-		/etc/init.d/vpxa restart
+		esxcli iscsi adapter set -n ${IQN} -A ${VMHBA}
+		esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
 		esxcli storage core adapter rescan --all
 
 ### Deploying UC VMs on iSCSI datastore

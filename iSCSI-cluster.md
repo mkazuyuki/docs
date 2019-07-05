@@ -70,7 +70,7 @@ On both iSCSI Target VMs,
 		# The IP address in the below (192.168.137.11/24) is just an example.
 
 		nmcli c m ens192 ipv4.method manual ipv4.addresses 192.168.137.11/24 connection.autoconnect yes
-		yum -y install targetcli targetd open-vm-tools
+		yum -y install targetcli targetd open-vm-tools perl
 
 		reboot
 
@@ -100,7 +100,7 @@ On both iSCSI Target VMs,
 		ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
 
 		nmcli c m ens192 ipv4.method manual ipv4.addresses 192.168.137.12/24 connection.autoconnect yes
-		yum -y install targetcli targetd open-vm-tools
+		yum -y install targetcli targetd open-vm-tools perl
 
 		reboot
 
@@ -119,12 +119,6 @@ On both iSCSI Target VMs,
 		clplcnsc -i [replicator-license-file]
 		reboot
 
-
-  - Install packages and EC licenses
-
-		yum -y install targetcli targetd opne-vm-tools
-
-
 ### Configuring iSCSI Target Cluster
 
 On the client PC,
@@ -135,7 +129,7 @@ On the client PC,
 
 	- [Cluster generation wizard]
 	- Input *iSCSI-Cluster* as [Cluster name], [English] as Language > [Next]
-	- [Add] > input *172.31.255.12* as [IP Address of secondary server] > [OK]
+	- [Add] > input *172.31.255.12* as [Server Name or IP Address] of secondary server > [OK]
 	- Confirm *iscsi2* was added > [Next]
 	- Configure Interconnect
 		
@@ -187,23 +181,25 @@ This resource is enabling more automated MD recovery by supposing the node which
 - [Finish]
 
 for md2 do the same like md1 by using
-	- *md2* as [Name]
-	- */dev/sdc2* as [Data Partition Device Name] 
-	- */dev/sdc1* as [Cluster Partition Device Name]
+  - *md2* as [Name]
+  - */dev/sdc2* as [Data Partition Device Name] 
+  - */dev/sdc1* as [Cluster Partition Device Name]
 
 #### Adding the execute resource for controlling target service
 - Click [Add resource] button in right side of [failover-iscsi]
 - Select [EXEC resource] as [Type] > set *exec1* as [Name] > [Next]
 - [Next]
 - [Next]
-- Select start.sh then click [Edit] > Add below lines.
+- Select start.sh then click [Edit]
+  - Add below lines.
 
 		#!/bin/bash
 		echo "Starting iSCSI Target"
 		systemctl start target
 		echo "Started  iSCSI Target"
 
-  - Select stop.sh then click [Edit] > Add below lines.
+- Select stop.sh then click [Edit]
+  - Add below lines.
 
 		#!/bin/bash
 		echo "Stopping iSCSI Target"
@@ -240,6 +236,8 @@ for md2 do the same like md1 by using
     - [Browse]
       - [LocalServer] > [OK]
     - [Finish]
+
+<!--	TBD	genw-md2 ‚Ì—v”ÛŠm”F	-->
 
 #### Adding the second custom monitor resource for keeping remote iSCSI VM and ECX online.
 - Click [Add monitor Resource] button in right side of [Monitors]

@@ -7,21 +7,20 @@
 # 
 
 use strict;
-#use FindBin;
 
 #-------------------------------------------------------------------------------
 # Configuration
 
 # VM name in the ESXi inventory and IP addresses of the VM
 my $VMNAME1	= 'iscsi1';
-my $VMIP1	= "192.168.0.11";
+my $VMIP1	= "172.31.255.11";
 
 my $VMNAME2	= 'iscsi2';
-my $VMIP2	= "192.168.0.12";
+my $VMIP2	= "172.31.255.12";
 
 # IP address of VMKernel port
-my $VMK1	= "10.0.0.1";
-my $VMK2	= "10.0.0.2";
+my $VMK1	= "172.31.254.21";
+my $VMK2	= "172.31.254.22";
 #-------------------------------------------------------------------------------
 
 my $LOOPCNT	= 2;	# times
