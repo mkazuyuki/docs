@@ -21,18 +21,18 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 |---				|---			|---			|
 | Hostname			| iscsi1		| iscsi2		|
 | root password			| passwd		| passwd		|
+| IP Address for Management	| 172.31.255.11/24  	| 172.31.255.12/24	|
 | IP Address for iSCSI Network	| 172.31.254.11/24	| 172.31.254.12/24	|
-| FIP for iSCSI Target		| 172.31.254.10		| <--			|
 | IP Address for Mirroring	| 172.31.253.11/24	| 172.31.253.12/24	|
-| IP Address for Management	| 172.31.255.11/24  	| 172.31.255.12/24  	|
 | Heartbeat Timeout		| 50 sec		| <-- |
 | MD1 - Cluster Partition	| /dev/sdb1		| <-- |
 | MD1 - Data Partition		| /dev/sdb2		| <-- |
 | MD2 - Cluster Partition	| /dev/sdc1		| <-- |
 | MD2 - Data Partition		| /dev/sdc2		| <-- |
-| WWN of iSCSI Target		| iqn.1996-10.com.ec	| <-- |
-| WWN of iSCSI Initiator 1	| iqn.1998-01.com.vmware:1	| <-- |
-| WWN of iSCSI Initiator 2	| iqn.1998-01.com.vmware:2	| <-- |
+| FIP for iSCSI Target		| 172.31.254.10		| <-- |
+| WWN for iSCSI Target		| iqn.1996-10.com.ec	| <-- |
+| WWN for iSCSI Initiator 1	| iqn.1998-01.com.vmware:1	| <-- |
+| WWN for iSCSI Initiator 2	| iqn.1998-01.com.vmware:2	| <-- |
 
 ## Overall Setup Procedure
 - Creating VMs (*iscsi1* and *iscsi2*) one on each ESXi
@@ -53,50 +53,76 @@ On both iSCSI Target VMs,
 
 - Install CentOS and configure
 
-	- hostname
-	- IP address
-	- block devices for MDn resoruce ( /dev/sd[b,c]1 for Cluster Partition and /dev/sd[b,c]2 for Data Partition)
-	- disable *firewalld* and *selinux*
-	- making keys for ssh
+  During CentOS installation, no need to set hostname and IP address. These will be setup after CentOS installation.
+  After CentOS installation, login then issue the below commands
 
-	on iscsi1
-	```
-	hostnamectl set-hostnme iscsi1
-	nmcli c m ens192 ipv4.method manual ipv4.addresses 172.31.255.11/24 connection.autoconnect yes
-	nmcli c m ens224 ipv4.method manual ipv4.addresses 172.31.253.11/24 connection.autoconnect yes
-	nmcli c m ens256 ipv4.method manual ipv4.addresses 172.31.254.11/24 connection.autoconnect yes
-	parted /dev/sdb mklabel msdos mkpart primary 1MiB 2MiB mkpart primary 2MiB 100%
-	parted /dev/sdc mklabel msdos mkpart primary 1MiB 2MiB mkpart primary 2MiB 100%
-	systemctrl stop firewalld.service
-	systemctrl disable firewalld.service
-	sed -i -e 's/SELINUX=>*/SELINUX=disabled/' /etc/selinux/config 
-	ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
-	reboot
-	```
+  - for iscsi1 :
 
-	on iscsi2
-	```
-	hostnamectl set-hostnme iscsi2
-	nmcli c m ens192 ipv4.method manual ipv4.addresses 172.31.255.12/24 connection.autoconnect yes
-	nmcli c m ens224 ipv4.method manual ipv4.addresses 172.31.253.12/24 connection.autoconnect yes
-	nmcli c m ens256 ipv4.method manual ipv4.addresses 172.31.254.12/24 connection.autoconnect yes
-	parted /dev/sdb mklabel msdos mkpart primary 1MiB 2MiB mkpart primary 2MiB 100%
-	parted /dev/sdc mklabel msdos mkpart primary 1MiB 2MiB mkpart primary 2MiB 100%
-	systemctrl stop firewalld.service
-	systemctrl disable firewalld.service
-	sed -i -e 's/SELINUX=>*/SELINUX=disabled/' /etc/selinux/config 
-	ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
-	reboot
-	```
+		hostnamectl set-hostnme iscsi1
+		systemctrl stop firewalld.service
+		systemctrl disable firewalld.service
+		# Disabling selinux
+		sed -i -e 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
+		ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
 
-- Install packages and EC licenses
-	```
-	yum -y install targetcli targetd
-	rpm -ivh expresscls.*.rpm
-	clplcnsc -i [base-license-file]
-	clplcnsc -i [replicator-license-file]
-	reboot
-	```
+		# Enabling access to the Internet
+		# Configure network so that can access the internet for *yum* command.
+		# The IP address in the below (192.168.137.11/24) is just an example.
+
+		nmcli c m ens192 ipv4.method manual ipv4.addresses 192.168.137.11/24 connection.autoconnect yes
+		yum -y install targetcli targetd open-vm-tools
+
+		reboot
+
+	Copy ECX rpm file and license files on iscsi1.
+
+	Configuring iscsi1 cont'd
+
+		nmcli c m ens192 ipv4.method manual ipv4.addresses 172.31.255.11/24 connection.autoconnect yes
+		nmcli c m ens224 ipv4.method manual ipv4.addresses 172.31.253.11/24 connection.autoconnect yes
+		nmcli c m ens256 ipv4.method manual ipv4.addresses 172.31.254.11/24 connection.autoconnect yes
+		parted /dev/sdb mklabel msdos mkpart primary 1MiB 1025MiB mkpart primary 1025MiB 100%
+		parted /dev/sdc mklabel msdos mkpart primary 1MiB 1025MiB mkpart primary 1025MiB 100%
+		rpm -ivh expresscls.*.rpm
+		clplcnsc -i [base-license-file]
+		clplcnsc -i [replicator-license-file]
+		reboot
+
+
+  - for iscsi2 :
+
+	The procedure is almost same as iscsi1. ogin then configure so that can access the internet for using *yum* command. The IP address in the below (192.168.137.12/24) is just an example.
+
+		hostnamectl set-hostnme iscsi2
+		systemctrl stop firewalld.service
+		systemctrl disable firewalld.service
+		sed -i -e 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
+		ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
+
+		nmcli c m ens192 ipv4.method manual ipv4.addresses 192.168.137.12/24 connection.autoconnect yes
+		yum -y install targetcli targetd open-vm-tools
+
+		reboot
+
+	Copy ECX rpm file and license files on iscsi2.
+
+	Configuring iscsi2 cont'd
+
+		nmcli c m ens192 ipv4.method manual ipv4.addresses 172.31.255.12/24 connection.autoconnect yes
+		nmcli c m ens224 ipv4.method manual ipv4.addresses 172.31.253.12/24 connection.autoconnect yes
+		nmcli c m ens256 ipv4.method manual ipv4.addresses 172.31.254.12/24 connection.autoconnect yes
+		parted /dev/sdb mklabel msdos mkpart primary 1MiB 1025MiB mkpart primary 1025MiB 100%
+		parted /dev/sdc mklabel msdos mkpart primary 1MiB 1025MiB mkpart primary 1025MiB 100%
+
+		rpm -ivh expresscls.*.rpm
+		clplcnsc -i [base-license-file]
+		clplcnsc -i [replicator-license-file]
+		reboot
+
+
+  - Install packages and EC licenses
+
+		yum -y install targetcli targetd opne-vm-tools
 
 
 ### Configuring iSCSI Target Cluster

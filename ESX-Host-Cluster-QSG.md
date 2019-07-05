@@ -103,6 +103,7 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 		esxcfg-vswitch -A iSCSI_Initiator iSCSI_vswitch
 		esxcfg-vswitch -A uc_vm_portgroup uc_vm_vswitch
 		esxcfg-vmknic -a -i 172.31.254.2 -n 255.255.255.0 iSCSI_Initiator
+		/etc/init.d/hostd restart
 
   - Connect to ESXi-B by ssh client then run the below shell script.
 
@@ -118,18 +119,24 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 		esxcfg-vswitch -A iSCSI_Initiator iSCSI_vswitch
 		esxcfg-vswitch -A uc_vm_portgroup uc_vm_vswitch
 		esxcfg-vmknic -a -i 172.31.254.3 -n 255.255.255.0 iSCSI_Initiator
+		/etc/init.d/hostd restart
+
+### Deploying iSCSI VMs on each ESXi
+- Re-open vSphere Host Client
+- Deploy iSCSI OVA on both ESXi and boot them.
 
 ### Setting up ESXi - iSCSI Initiator
-- Connect to ESXi-A by ssh client (e.g. putty etc) then run the below commands.
+  - Connect to ESXi-A by ssh client (e.g. putty etc) then run the below commands.
 
 		IQN1='iqn.1998-01.com.vmware:1'
 		IQN2='iqn.1998-01.com.vmware:2'
+		ADDR='172.31.254.10:3260'
 
 		# Enabling iSCSI Initiator
 		esxcli iscsi software set --enabled=true
 		VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
-		esxcli iscsi adapter set -n iqn.1998-01.com.vmware:1 -A ${VMHBA}
-		esxcli iscsi adapter discovery sendtarget add --address=172.31.254.10:3260 --adapter=${VMHBA}
+		esxcli iscsi adapter set -n ${IQN1} -A ${VMHBA}
+		esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
 		/etc/init.d/hostd restart
 		/etc/init.d/vpxa restart
 		esxcli storage core adapter rescan --all
@@ -143,7 +150,7 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 		# Formatting the partition
 		/sbin/vmkfstools -C vmfs5 -b 1m -S $(hostname -s)-local-datastore ${DEVICE}:1
 
-- Connect to ESXi-B by ssh client then run the below commands.
+  - Connect to ESXi-B by ssh client then run the below commands.
 
 		# Enabling iSCSI Initiator
 		esxcli iscsi software set --enabled=true
