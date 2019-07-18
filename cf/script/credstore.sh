@@ -1,8 +1,8 @@
 #!/bin/sh
 
-echo %%VMAPW%% | sudo -S sh -c "ssh-keygen -R %%VMK1%%"
-echo %%VMAPW%% | sudo -S sh -c "ssh-keygen -R %%VMK2%%"
-echo %%VMAPW%% | sudo -S sh -c "ssh-keyscan %%VMK1%% >> ~/.ssh/known_hosts"
-echo %%VMAPW%% | sudo -S sh -c "ssh-keyscan %%VMK2%% >> ~/.ssh/known_hosts"
-echo %%VMAPW%% | sudo -S sh -c "perl /tmp/credstore_.pl"
-echo %%VMAPW%% | sudo -S sh -c "rm /tmp/credstore_.pl"
+ssh-keygen -R %%VMK1%%
+ssh-keygen -R %%VMK2%%
+ssh-keyscan %%VMK1%% >> ~/.ssh/known_hosts
+ssh-keyscan %%VMK2%% >> ~/.ssh/known_hosts
+perl /tmp/credstore_.pl
+rm /tmp/credstore_.pl

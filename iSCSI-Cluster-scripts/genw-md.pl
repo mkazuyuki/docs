@@ -14,32 +14,27 @@ my $name_md = "";
 # Getting the MD name
 &execution("clpmdstat -l");
 foreach (@lines) {
-	if (/<(.+)>/) {
-		$name_md = $1;
-		last
-	}
+        if (/<(.+)>/) {
+                push(@name_md, $1);
+        }
 }
 
 # Checking the MD status
-my $flag = 0;
-&execution("clpmdstat -m \'$name_md\'");
-foreach (@lines){
-	if (/Mirror Color\s+?RED/){
-		&Log("[D]\t$_");
-		$flag = 1;
-		last;
-	}
+foreach my $md (@name_md) {
+    &execution("clpmdstat -m \'$md\'");
+    foreach my $li (@lines){
+        if ($li =~ /Mirror Color\s+?RED/){
+			# Forced Recovering the MD
+			&Log("[D]\t$li");
+			&execution("clpmdctrl -f $md");
+			foreach (@lines) {
+				chomp;
+			&Log("[D]\t$_\n");
+			}
+            last;
+        }
+    }
 }
-
-# Forced Recovering the MD
-if ($flag) {
-	&execution("clpmdctrl -f $name_md");
-	foreach (@lines) {
-		chomp;
-		&Log("[D]\t$_\n");
-	}
-}
-
 exit $ret;
 
 #-------------------------------------------------------------------------------

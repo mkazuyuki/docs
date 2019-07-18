@@ -1,13 +1,11 @@
 # Howto setup vMA Cluster on EXPRESSCLUSTER for Linux
 
-----
-
 This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Linux.
 
-----
+
 ## Versions
 - VMware vSphere Hypervisor 6.7 (VMware ESXi 6.7)
-- CentOS 7.3 x86_64
+- CentOS 6.6 x86_64
 - vSphere Command Line Interface 6.7
 - EXPRESSCLUSTER X for Linux 4.1.1-1
 
@@ -24,7 +22,7 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 
 ## Overall Setup Procedure
 - Creating VMs (*vma1* and *vma2*) one on each ESXi
-- Install vCLI and ECX on them.
+- Install vCLI and EC on them.
 
 ## Procedure
 
@@ -33,60 +31,46 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 |Virtual HW	|Number, Amount	|
 |:--		|:---		|
 | vCPU		| 2 CPU		| 
-| Memory	| 2 GB		|
+| Memory	| 4 GB		|
 | vNIC		| 1 port	|
-| vHDD		| 3 GB for OS	|
+| vHDD		| 6 GB		|
 
-On both vMA VMs,
+On vma1 and vma2,
 
-- Install CentOS and configure
+- Install CentOS and configure hostname, IP address, firewalld, selinux, ssh
 
-	- hostname
-	- IP address
-	- disable *firewalld* and *selinux*
-	- making keys for ssh
+  - on vma1
 
-	on vma1
-	```
-	hostnamectl set-hostnme vma1
-	nmcli c m ens192 ipv4.method manual ipv4.addresses 172.31.255.6/24 connection.autoconnect yes
-	systemctrl stop firewalld.service
-	systemctrl disable firewalld.service
-	sed -i -e 's/SELINUX=>*/SELINUX=disabled/' /etc/selinux/config 
-	ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
-	reboot
-	```
+		hostnamectl set-hostnme vma1
+		nmcli c m ens192 ipv4.method manual ipv4.addresses 172.31.255.6/24 connection.autoconnect yes
+		systemctrl stop firewalld.service
+		systemctrl disable firewalld.service
+		sed -i -e 's/SELINUX=>*/SELINUX=disabled/' /etc/selinux/config 
+		ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
+		reboot
 
-	on vma2
-	```
-	hostnamectl set-hostnme vma2
-	nmcli c m ens192 ipv4.method manual ipv4.addresses 172.31.255.7/24 connection.autoconnect yes
-	systemctrl stop firewalld.service
-	systemctrl disable firewalld.service
-	sed -i -e 's/SELINUX=>*/SELINUX=disabled/' /etc/selinux/config 
-	ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
-	reboot
-	```
+  - on vma2
 
-On vma1 and vma2
+		hostnamectl set-hostnme vma2
+		nmcli c m ens192 ipv4.method manual ipv4.addresses 172.31.255.7/24 connection.autoconnect yes
+		systemctrl stop firewalld.service
+		systemctrl disable firewalld.service
+		sed -i -e 's/SELINUX=>*/SELINUX=disabled/' /etc/selinux/config 
+		ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
+		reboot
 
 - Install vCLI and EC
+  - Download vCLI package and install according to the document
+    - package
+      https://code.vmware.com/web/tool/6.7/vsphere-cli  
+    - document
+      https://code.vmware.com/docs/6526/getting-started-with-vsphere-command-line-interfaces
+  - Download EC rpm file and its license file.
+  - Install EC
 
-  - Download the package from
-
-	https://code.vmware.com/web/tool/6.7/vsphere-cli
-
-  - Install it to both vMA VMs according to the document on
-
-	https://code.vmware.com/docs/6526/getting-started-with-vsphere-command-line-interfaces
-
-  - Put ECX rpm file and its license file by using scp command and so on.
-  - Install ECX
-
-    	> sudo bash
-    	# rpm -ivh expresscls-4.1.1-1.x86_64.rpm
-    	# clplcnsc -I [license file]
-    	# reboot
+		rpm -ivh expresscls-4.1.1-1.x86_64.rpm
+		clplcnsc -I [license_file]
+		reboot
 
 ## Revision history
 2017.02.03	Miyamoto Kazuyuki	1st issue  

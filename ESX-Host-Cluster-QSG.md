@@ -1,11 +1,8 @@
 
 # Howto setup HAUC
 
-----
-
 This guide provides how to set up HAUC (Highly Available Unified Communications). The guide assumes its readers to have Linux system administration knowledge and skills with experience in installation and configuration of Storages, and Networks.
 
-----
 
 ## Overview
 
@@ -18,10 +15,12 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 5. Deploy UC VMs
 6. Deploy and configure *vMA Cluster*.
     
-----
 
 ## Versions
-- vSphere Hypervisor 6.7 (vSphere ESXi 6.7)
+- vSphere ESXi 6.7
+- vSphere Comman Line Interface 6.7 (https://code.vmware.com/web/tool/6.7/vsphere-cli)
+- Strawberry Perl 5.30.0.1 (64bit)   (http://strawberryperl.com/)
+
 
 ## System Requirements and Planning
 
@@ -54,24 +53,31 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 
 ### Preparing 64bit Windows PC
 
-- Download and extract the **Docs-Master.zip**
-- Install vSphere CLI  
+- Download and extract the [**Docs-Master.zip**](https://github.com/mkazuyuki/docs/archive/master.zip)
+- Install vSphere CLI
+- Install Strawberry Perl
+  - Open CPAN client and install perl modules
 
-	Install vSphere CLI 6.0, it can be downloaded from the link below.  
-	**Note**: vSphere CLI 6.0 is easier to install as it installs Perl and the xml libraries that are required.
-	If you select to use vSphere CLI 6.7 then you will need to manually install Perl and the xml libraries separately.
+		# If you are behind firewall
+		cpan> o conf http_proxy http://PROXY_HOST:PORT
+		cpan> o conf ftp_proxy http://PROXY_HOST:PORT
 
-	https://code.vmware.com/web/tool/6.0/vsphere-cli
-	https://code.vmware.com/web/tool/6.7/vsphere-cli
+		cpan> o urllist o conf urllist push http://ftp.riken.jp/lang/CPAN/
+		cpan> o conf commit
 
-- Download putty.exe plink.exe and pscp.exe to the Docs-Master subfolder CF
+		cpan> install Text::Template
+		cpan> install UUID
 
-	https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe
-	https://the.earth.li/~sgtatham/putty/latest/w64/plink.exe
-	https://the.earth.li/~sgtatham/putty/latest/w64/pscp.exe
+- Download
+	[putty](https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe),
+	[plink](https://the.earth.li/~sgtatham/putty/latest/w64/plink.exe),
+	[pscp](https://the.earth.li/~sgtatham/putty/latest/w64/pscp.exe)
+  to the Docs-Master subfolder CF
 
 ### Setting up ESXi - Network
-- Install vSphere Hypervisor.
+
+Install vSphere ESXi.
+
 - Set up hostname and IP address.
 
 	|		| Primary	| Secondary	|
@@ -79,17 +85,16 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 	| Hostname	| esxi1		| esxi2		|
 	| Management IP	| 172.31.255.2	| 172.31.255.3	|
 
-- Start ssh service and configure it to start automatically.
-  - Open vSphere Host Client
-    - [Manage] in [Navigator] pane > [Services] tab
-      - [TSM] >  [Actions] > [Start]
-      - [TSM] >  [Actions] > [Polilcy] > [Start and stop with host]
-      - [TSM-SSH] >  [Actions] > [Start]
-      - [TSM-SSH] >  [Actions] > [Polilcy] > [Start and stop with host]
+Start ssh service and configure it to start automatically.
 
-- Configure ESXi network : vSwitch, Physical NICs, Port groups, VMkernel NIC for iSCSI Initiator
+- Open vSphere Host Client
+  - [Manage] in [Navigator] pane > [Services] tab
+    - [TSM-SSH] >  [Actions] > [Start]
+    - [TSM-SSH] >  [Actions] > [Polilcy] > [Start and stop with host]
 
-  - Connect to ESXi-A by ssh client (e.g. putty) then run the below shell script.
+Configure ESXi network : vSwitch, Physical NICs, Port groups, VMkernel NIC for iSCSI Initiator
+
+  - Connect to esxi1 by putty then run the below shell script.
 
 		#!/bin/sh
 		esxcfg-vswitch -a Mirror_vswitch
@@ -105,7 +110,7 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 		esxcfg-vmknic -a -i 172.31.254.2 -n 255.255.255.0 iSCSI_Initiator
 		/etc/init.d/hostd restart
 
-  - Connect to ESXi-B by ssh client then run the below shell script.
+  - Connect to esxi2 by putty then run the below shell script.
 
 		#!/bin/sh
 		esxcfg-vswitch -a Mirror_vswitch
@@ -126,7 +131,7 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 - Deploy iSCSI OVA on both ESXi and boot them.
 
 ### Setting up ESXi - iSCSI Initiator
-  - Connect to ESXi-A by ssh client (e.g. putty etc) then run the below script.
+  - Connect to ESXi-A by putty then run the below shell script.
 
 		#!/bin/sh
 
@@ -149,7 +154,7 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 			i=$(($i + 1))
 		done
 
-  - Connect to ESXi-B by ssh client then run the below script.
+  - Connect to ESXi-B by ssh client then run the below shell script.
 
 		#!/bin/sh
 

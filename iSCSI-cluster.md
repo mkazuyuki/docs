@@ -45,7 +45,7 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 |Virtual HW	|Number, Amount	|
 |:--		|:---		|
 | vCPU		| 4 CPU		| 
-| Memory	| 4 GB		|
+| Memory	| 8 GB		|
 | vNIC		| 3 ports       |
 | vHDD		| 16 GB for OS<br>500 GB for MD1<br>500 GB for MD2 |
 

@@ -6,8 +6,8 @@
 # 
 # Prerequisite package
 #
-#	VMware-vSphere-CLI-6.0.0-3561779.exe
-#		https://my.vmware.com/jp/web/vmware/details?productId=491&downloadGroup=VCLI60U2
+#	VMware-vSphere-CLI-6.7.0-8156551
+#		https://code.vmware.com/web/tool/6.7/vsphere-cli
 #
 #	plink.exe , pscp.exe
 #		https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
@@ -41,32 +41,11 @@ my $TMPL_CRED	= $TMPL_DIR . "/credstore.pl";
 my @esxi_ip	= ('172.31.255.2', '172.31.255.3');		# ESXi IP address
 my @esxi_pw	= ('NEC123nec!', 'NEC123nec!');			# ESXi root password
 my @vma_ip	= ('172.31.255.6', '172.31.255.7');		# vMA IP address
-my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA vi-admin password
+my @vma_pw	= ('NEC123nec!', 'NEC123nec!');			# vMA root password
 my @iscsi_ip	= ('172.31.255.11', '172.31.255.12');		# iSCSI IP address
 my @iscsi_pw	= ('NEC123nec!', 'NEC123nec!');			# iSCSI root password
 my $dsname	= "iSCSI";					# iSCSI Datastore
-my $vsw		= "vSwitch0";					# vSwitch for UCVM
-
-#my $i = 1;
-#&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i]   $vma_ip[$i]   \"echo $vma_pw[$i] | sudo -S sh -c \\\"cp /root/.ssh/id_rsa.pub /tmp\\\"\"");
-#&execution(".\\pscp.exe  -l vi-admin -pw $vma_pw[$i]   $vma_ip[$i]:/tmp/id_rsa.pub .\\id_rsa_vma_$i.pub");
-#&execution(".\\pscp.exe  -l root     -pw $iscsi_pw[$i] .\\id_rsa_vma_$i.pub $iscsi_ip[$i]:/tmp");
-#&execution(".\\plink.exe -l root     -pw $iscsi_pw[$i] $iscsi_ip[$i] \"a=`cat /tmp/id_rsa_vma_$i.pub`; grep \\\"\$a\\\" ~/.ssh/authorized_keys\"");
-#if ($? != 0) {
-#	&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"cat /tmp/id_rsa_vma_$i.pub >> ~/.ssh/authorized_keys\"");
-#}
-#&execution(".\\plink.exe -l root     -pw $iscsi_pw[$i] $iscsi_ip[$i] \"rm /tmp/id_rsa_vma_$i.pub\"");
-#unlink ( ".\\id_rsa_vma_$i.pub" ) or die;
-#exit;
-
-## Initial environment
-#my @esxi_ip	= ('0.0.0.0', '0.0.0.0');	# ESXi IP address
-#my @esxi_pw	= ('(none)', '(none)'); 	# ESXi root password
-#my @vma_hn	= ('(none)', '(none)'); 	# vMA hostname
-#my @vma_ip	= ('0.0.0.0', '0.0.0.0');	# vMA IP address
-#my @vma_pw	= ('(none)', '(none)');		# vMA vi-admin password
-#my $dsname	= "iSCSI";			# iSCSI Datastore
-#my $vmhba	= "vmhba33";			# iSCSI Software Adapter
+my $vsw		= "uc_vm_vswitch";				# vSwitch for UCVM
 
 my @wwn 	= ('iqn.1998-01.com.vmware:1', 'iqn.1998-01.com.vmware:2');	# Pre-defined iSCSI WWN to be set to ESXi
 my @vmhba	= ('', '');							# iSCSI Software Adapter
@@ -418,7 +397,7 @@ sub putInitScripts {
 			}
 			close(OUT);
 			close(IN);
-			&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$n] $file $vma_ip[$n]:/tmp");
+			&execution(".\\pscp.exe -l root -pw $vma_pw[$n] $file $vma_ip[$n]:/tmp");
 			unlink ( "$file" ) or die;
 		}
 
@@ -431,7 +410,7 @@ sub putInitScripts {
 		}
 		close(OUT);
 		close(IN);
-		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$n] $vma_ip[$n] -m $file");
+		&execution(".\\plink.exe -no-antispoof -l root -pw $vma_pw[$n] $vma_ip[$n] -m $file");
 		unlink ( "$file" ) or die;
 	}
 }
@@ -439,11 +418,11 @@ sub putInitScripts {
 sub Save {
 	print "[I] Check ESXi, iSCSI nodes connectable";
 	for (my $i = 0; $i < 2; $i++) {
-		if (&execution(".\\plink.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] hostname")) {
+		if (&execution(".\\plink.exe -no-antispoof -l root -pw $esxi_pw[$i] $esxi_ip[$i] hostname")) {
 			&Log("[E] failed to access ESXi#" . ($i+1) .". Check IP or password.\n");
 			return -1;
 		}
-		if (&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] hostname")) {
+		if (&execution(".\\plink.exe -no-antispoof -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] hostname")) {
 			&Log("[E] failed to access iscsi#" . ($i+1) .". Check IP or password.\n");
 			return -1;
 		}
@@ -507,21 +486,19 @@ sub Save {
 
 	for (my $i = 0; $i<2; $i++){
 		# Put credstore controlling script to vMA
-		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $CFG_CRED $vma_ip[$i]:/tmp");
+		&execution(".\\pscp.exe -l root -pw $vma_pw[$i] $CFG_CRED $vma_ip[$i]:/tmp");
 
 		# Access to vMA and execute credstore_admin.pl
-		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
+		&execution(".\\plink.exe -no-antispoof -l root -pw $vma_pw[$i] $vma_ip[$i] -m credstore_$i.sh");
 		if ($?) {
 			print "\n[E] failed to execute credstore_admin.pl\n";
 			return -1
 		}
 		# Configure id_rsa.pub and known_hosts file on iscsi
-		&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] -m ssh-keyscan.sh");
+		&execution(".\\plink.exe -no-antispoof -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] -m ssh-keyscan.sh");
 
 		# Get ssh public key from vMA, iSCSI
-		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] \"echo $vma_pw[$i] | sudo -S sh -c \\\"cp /root/.ssh/id_rsa.pub /tmp\\\"\"");
-		&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i]:/tmp/id_rsa.pub .\\id_rsa_vma_$i.pub");
-		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] \"echo $vma_pw[$i] | sudo -S sh -c \\\"rm /tmp/id_rsa.pub\\\"\"");
+		&execution(".\\pscp.exe -l root -pw $vma_pw[$i] $vma_ip[$i]:/root/.ssh/id_rsa.pub .\\id_rsa_vma_$i.pub");
 		&execution(".\\pscp.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i]:/root/.ssh/id_rsa.pub .\\id_rsa_iscsi_$i.pub");
 
 		# Put ssh public key to ESXi
@@ -532,22 +509,22 @@ sub Save {
 
 		# Put vMA ssh public key to iSCSI and make /root/.ssh/authorized_keys for vMA
 		&execution(".\\pscp.exe -l root -pw $iscsi_pw[$i] .\\id_rsa_vma_$i.pub $iscsi_ip[$i]:/tmp");
-		&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"a=`cat /tmp/id_rsa_vma_$i.pub`; grep \\\"\$a\\\" ~/.ssh/authorized_keys\"");
+		&execution(".\\plink.exe -no-antispoof -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"a=`cat /tmp/id_rsa_vma_$i.pub`; grep \\\"\$a\\\" ~/.ssh/authorized_keys\"");
 		if ($?) {
 			# create entry for vMA in authorized_keys in iSCSI when authorized_keys not exists or it does not have the entry for vMA node.
-			&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"cat /tmp/id_rsa_vma_$i.pub >> ~/.ssh/authorized_keys\"");
+			&execution(".\\plink.exe -no-antispoof -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"cat /tmp/id_rsa_vma_$i.pub >> ~/.ssh/authorized_keys\"");
 		}
-		&execution(".\\plink.exe -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"rm /tmp/id_rsa_vma_$i.pub\"");
+		&execution(".\\plink.exe -no-antispoof -l root -pw $iscsi_pw[$i] $iscsi_ip[$i] \"rm /tmp/id_rsa_vma_$i.pub\"");
 
 		# Configure known_hosts file on vMA to have iSCSI host-key
-		&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] \"echo $vma_pw[$i] | sudo -S sh -c 'ssh-keygen -R $iscsi_ip[$i]; ssh-keyscan -t ecdsa $iscsi_ip[$i] >> ~/.ssh/known_hosts'\"");
+		&execution(".\\plink.exe -no-antispoof -l root -pw $vma_pw[$i] $vma_ip[$i] \"sh -c 'ssh-keygen -R $iscsi_ip[$i]; ssh-keyscan -t ecdsa $iscsi_ip[$i] >> ~/.ssh/known_hosts'\"");
 
 		&execution("del credstore_$i.sh id_rsa_vma_$i.pub id_rsa_iscsi_$i.pub");
 	}
 
 	for (my $i = 0; $i<2; $i++){
 		# Access to ESXi, make /etc/ssh/keys-root/authorized_keys, and set ATS Heartbeat disable.
-		&execution(".\\plink.exe -l root -pw $esxi_pw[$i] $esxi_ip[$i] -m $SCRIPT_DIR/sshmk.sh");
+		&execution(".\\plink.exe -no-antispoof -l root -pw $esxi_pw[$i] $esxi_ip[$i] -m $SCRIPT_DIR/sshmk.sh");
 	}
 
 	&execution("del $CFG_CRED ssh-keyscan.sh");
@@ -593,8 +570,31 @@ sub Save {
 	#
 	# Creating start.sh stop.sh genw.sh
 	#
+
+	# Specify Datastore name for .vmx
+	my @ds = ();
+	for my $i (0 .. 1) {
+		&execution(".\\plink.exe -no-antispoof -l root -pw $esxi_pw[$i] $esxi_ip[$i] \"esxcli storage vmfs extent list\"");
+		foreach (@outs) {
+			chomp;
+			if(/^(.+?)\s+(.+?)\s+0/){
+				$ds[$i]{$2} = $1;	# $ds[ESXi_INDEX]{UUID} = DATASTORE_NAME
+				&Log("[D] datastore [$ds[$i]{$2}]\t= UUID [$2]\n");
+			}
+		}
+	}
+
 	for my $i (0 .. $#vmx) {
 		foreach my $vm (keys %{$vmx[$i]}) {
+			for my $n (0 .. 1) {
+				foreach (keys %{$ds[$n]}){
+					if ($vmx[$i]{$vm} =~ /$_/){
+						$dsname = $ds[$n]{$_};
+						&Log("[D] Datastore name = [$dsname]\n");
+						last
+					}
+				}
+			}
 			open(IN, "$TMPL_START") or die;
 			open(OUT,"> $CFG_DIR/scripts/failover-$vm/exec-$vm/start.sh") or die;
 			while (<IN>) {
@@ -738,10 +738,10 @@ sub Save {
 	print "[I] ----------\n";
 	print "[I] Applying the configuration to vMA cluster\n";
 	print "[I] ----------\n";
-	&execution(".\\pscp.exe -l vi-admin -pw $vma_pw[0] -r .\\conf $vma_ip[0]:/tmp");
-	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcl --suspend\'\"");
-	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcfctrl --push -w -x /tmp/conf\'\"");
-	&execution(".\\plink.exe -l vi-admin -pw $vma_pw[0] $vma_ip[0] \"echo $vma_pw[0] | sudo -S sh -c \'clpcl --resume\'\"");
+	&execution(".\\pscp.exe -l root -pw $vma_pw[0] -r .\\conf $vma_ip[0]:/tmp");
+	&execution(".\\plink.exe -no-antispoof -l root -pw $vma_pw[0] $vma_ip[0] \"clpcl --suspend\"");
+	&execution(".\\plink.exe -no-antispoof -l root -pw $vma_pw[0] $vma_ip[0] \"clpcfctrl --push -w -x /tmp/conf\"");
+	&execution(".\\plink.exe -no-antispoof -l root -pw $vma_pw[0] $vma_ip[0] \"clpcl --resume\"");
 
 	return 0;
 }
@@ -755,8 +755,8 @@ sub menu {
 		'set ESXi#2 root password : ' . $esxi_pw[1],
 		'set vMA#1 IP             : ' . $vma_ip[0],
 		'set vMA#2 IP             : ' . $vma_ip[1],
-		'set vMA#1 vi-admin passwd: ' . $vma_pw[0],
-		'set vMA#2 vi-admin passwd: ' . $vma_pw[1],
+		'set vMA#1 root password  : ' . $vma_pw[0],
+		'set vMA#2 root password  : ' . $vma_pw[1],
 		'set iSCSI#1 IP           : ' . $iscsi_ip[0],
 		'set iSCSI#2 IP           : ' . $iscsi_ip[1],
 		'set iSCSI#1 root password: ' . $iscsi_pw[0],
@@ -799,7 +799,7 @@ sub select {
 	elsif ( $menu_vMA[$i] =~ /set vMA#([1,2]) IP/ ) {
 		&setvMAIP($1);
 	}
-	elsif ( $menu_vMA[$i] =~ /set vMA#([1..2]) vi-admin passwd/ ) {
+	elsif ( $menu_vMA[$i] =~ /set vMA#([1..2]) root password/ ) {
 		&setvMAPwd($1);
 	}
 	elsif ( $menu_vMA[$i] =~ /set iSCSI#([1,2]) IP/ ) {
@@ -914,7 +914,7 @@ sub addVM {
 		print "\n[I] Getting hostname of vMA\n";
 		print "-----------\n";
 		for (my $i = 0; $i < 2; $i++) {
-			if (&execution(".\\plink.exe -l vi-admin -pw $vma_pw[$i] $vma_ip[$i] hostname")) {
+			if (&execution(".\\plink.exe -no-antispoof -l root -pw $vma_pw[$i] $vma_ip[$i] hostname")) {
 				&Log("[E] failed to access vMA#" . ($i+1) .". Check IP or password.\n");
 				return -1;
 			} else {
