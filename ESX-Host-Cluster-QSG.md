@@ -29,9 +29,9 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 | Portion	| Description 
 |:--		|:--	
 | CPU Cores	| (Cores for VMkernel) + (Cores for UC VMs) + (4 Cores for iSCSI VM) + (2 Cores for vMA VM)
-| Memory	| (amount for VMkernel) + (required amount for UC VMs) + (4GB for iSCSI VM) + (2GB for vMA VM)
-| LAN Port	| 3 LAN ports (iSCSI, ECX data-mirroring, Management)
-| Storage	| (amount for ESXi system) + (required amount for UC VMs) + (16GB for iSCSI VM) + (3GB for vMA VM)
+| Memory	| (amount for VMkernel) + (required amount for UC VMs) + (8GB for iSCSI VM) + (4GB for vMA VM)
+| LAN Port	| 4 LAN ports (iSCSI, ECX data-mirroring, Management, UC)
+| Storage	| (amount for ESXi system) + (required amount for UC VMs) + (6GB for iSCSI VM) + (6GB for vMA VM)
 
 ### Network configuration
 ![Network configuraiton](HAUC-NW-Configuration.png)

@@ -1,6 +1,6 @@
 # Howto install vCLI6.7 on CentOS6.6 behind firewall
 
-## Do CentOS 6.6 Minimal Install then
+## Do CentOS 6.6 Minimal Install and the network configuration then
 ```
 ifup eth0
 export http_proxy=http://PROXY_HOST:PORT
@@ -26,12 +26,4 @@ q
 ```
 tar xzvf VMware-vSphere-CLI-6.7.0-8156551.x86_64.tar.gz
 ./vmware-vsphere-cli-distrib/vmware-install.pl
-ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
-```
-
-## Put ECX rpm and license file then
-```
-sed -i -e 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
-rpm -ivh expresscls-4.1.1-1.x86_64.rpm
-clplcnsc -i ECX4.x-lin1.key
 ```
