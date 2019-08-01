@@ -34,7 +34,7 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 
 ### Creating VMs on both ESXi
 
-- Download CetOS 6.6 (CentOS-6.6-x86_64-minimal.iso) and put it on /vmfs/volumes/datastore1/iso_of esxi1 and esxi2.
+- Download CetOS 6.6 (CentOS-6.6-x86_64-minimal.iso) and put it on /vmfs/volumes/datastore1/iso of esxi1 and esxi2.
 
 - Run the below script
 
