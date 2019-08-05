@@ -178,7 +178,7 @@ sub AddNode {
 	#
 	for($i = $#lines; $i > 0; $i--){
 		if($lines[$i] =~ /<objectnumber>(.*)<\/objectnumber>/){
-			$lines[$i] = "<objectnumber>" .  ($1 + 2) . "</objectnumber>";
+			$lines[$i] = "<objectnumber>" .  ($1 + 3) . "</objectnumber>";
 			last;
 		}
 	}
@@ -416,7 +416,7 @@ sub putInitScripts {
 }
 
 sub Save {
-	print "[I] Check ESXi, iSCSI nodes connectable";
+	&Log("[I] Check ESXi, iSCSI nodes connectable\n");
 	for (my $i = 0; $i < 2; $i++) {
 		if (&execution(".\\plink.exe -no-antispoof -l root -pw $esxi_pw[$i] $esxi_ip[$i] hostname")) {
 			&Log("[E] failed to access ESXi#" . ($i+1) .". Check IP or password.\n");
