@@ -4,8 +4,8 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 
 
 ## Versions
-- VMware vSphere Hypervisor 6.7 (VMware ESXi 6.7)
-- CentOS 6.6 x86_64
+- VMware vSphere Hypervisor 6.7U2 (VMware ESXi 6.7U2)
+- CentOS 7.6 x86_64
 - vSphere Command Line Interface 6.7
 - EXPRESSCLUSTER X for Linux 4.1.1-1
 
@@ -28,13 +28,13 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 
 ## Overall Setup Procedure
 - Creating VMs (*vma1* and *vma2*) one on each ESXi
-- Install vCLI and EC on them.
+- Install CentOS, vCLI and EC on them.
 
 ## Procedure
 
 ### Creating VMs on both ESXi
 
-- Download CetOS 6.6 (CentOS-6.6-x86_64-minimal.iso) and put it on /vmfs/volumes/datastore1/iso of esxi1 and esxi2.
+- Download CetOS 7.6 (CentOS-7-x86_64-Minimal-1810.iso) and put it on /vmfs/volumes/datastore1/iso of esxi1 and esxi2.
 
 - Run the below script
 
@@ -42,24 +42,18 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 
 		#!/bin/sh -ue
 
-		#
-		# vMA VM
-		#
-
 		# (0) Parameters
 		DATASTORE_PATH=/vmfs/volumes/datastore1
-		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-6.6-x86_64-minimal.iso
-		VM_NAME=vma1
+		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7-x86_64-Minimal-1810.iso
+		VM_NAME=vMA1
 		VM_CPU_NUM=2
 		VM_MEM_SIZE=4096
-		VM_NETWORK_NAME1="uv_vm_vswitch"
-
-		VM_GUEST_OS=centos6-64
+		VM_NETWORK_NAME1="VM Network"
+		VM_GUEST_OS=centos7-64
 		VM_CDROM_DEVICETYPE=cdrom-image  # cdrom-image / atapi-cdrom
-
 		VM_DISK_SIZE=6g
-		VM_DISK_PATH=$DATASTORE_PATH/$VM_NAME/$VM_NAME.vmdk
 
+		VM_DISK_PATH=$DATASTORE_PATH/$VM_NAME/$VM_NAME.vmdk
 		VM_VMX_FILE=$DATASTORE_PATH/$VM_NAME/$VM_NAME.vmx
 
 		# (1) Create dummy VM
@@ -71,6 +65,7 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 		guestOS = "$VM_GUEST_OS"
 		numvcpus = "$VM_CPU_NUM"
 		memSize = "$VM_MEM_SIZE"
+		ethernet0.virtualDev = "vmxnet3"
 		ethernet0.present = "TRUE"
 		ethernet0.networkName = "$VM_NETWORK_NAME1"
 		ethernet0.addressType = "generated"
@@ -81,7 +76,7 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 		__EOF__
 
 		# (3) Extend disk size
-		#vmkfstools -X $VM_DISK_SIZE $VM_DISK_PATH 
+		vmkfstools -X $VM_DISK_SIZE $VM_DISK_PATH 
 
 		# (4) Reload VM information
 		vim-cmd vmsvc/reload $VM_ID
@@ -90,24 +85,18 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 
 		#!/bin/sh -ue
 
-		#
-		# vMA VM
-		#
-
 		# (0) Parameters
 		DATASTORE_PATH=/vmfs/volumes/datastore1
-		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-6.6-x86_64-minimal.iso
-		VM_NAME=vma2
+		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7-x86_64-Minimal-1810.iso
+		VM_NAME=vMA2
 		VM_CPU_NUM=2
 		VM_MEM_SIZE=4096
-		VM_NETWORK_NAME1="uv_vm_vswitch"
-
-		VM_GUEST_OS=centos6-64
+		VM_NETWORK_NAME1="VM Network"
+		VM_GUEST_OS=centos7-64
 		VM_CDROM_DEVICETYPE=cdrom-image  # cdrom-image / atapi-cdrom
-
 		VM_DISK_SIZE=6g
-		VM_DISK_PATH=$DATASTORE_PATH/$VM_NAME/$VM_NAME.vmdk
 
+		VM_DISK_PATH=$DATASTORE_PATH/$VM_NAME/$VM_NAME.vmdk
 		VM_VMX_FILE=$DATASTORE_PATH/$VM_NAME/$VM_NAME.vmx
 
 		# (1) Create dummy VM
@@ -119,6 +108,7 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 		guestOS = "$VM_GUEST_OS"
 		numvcpus = "$VM_CPU_NUM"
 		memSize = "$VM_MEM_SIZE"
+		ethernet0.virtualDev = "vmxnet3"
 		ethernet0.present = "TRUE"
 		ethernet0.networkName = "$VM_NETWORK_NAME1"
 		ethernet0.addressType = "generated"
@@ -129,30 +119,36 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 		__EOF__
 
 		# (3) Extend disk size
-		#vmkfstools -X $VM_DISK_SIZE $VM_DISK_PATH 
+		vmkfstools -X $VM_DISK_SIZE $VM_DISK_PATH 
 
 		# (4) Reload VM information
 		vim-cmd vmsvc/reload $VM_ID
 
-- Boot vma1 and vma2 and install CentOS
+- Boot vMA1 and vMA2 and install CentOS
 
 - Configure hostname, IP address, firewall, selinux, ssh
 
-  In the following, *eth0* is expected be connected to *uc_vm_vswitch* and obtain network configuration from DHCP server. When DHCP server does not exist, /etc/sysconfig/network-scripts/ifcfg-eth0 need to be edited so that can access the Internet.
+  vMA1, 2 need to be accessible to the internet during the setup.
+  In the following, *ens160* assumes to be connected to *VM Network* port group and obtain network configuration from DHCP server.
+  When DHCP is abscent, use *nmtui* command or edit /etc/sysconfig/network-scripts/ifcfg-ens160 so that can access the Internet.
 
   - on vma1
-  
-		sed -i -e 's/HOSTNMAE=.*/HOSTNAME=vma1/' /etc/sysconfig/network 
-		sed -i -e 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
-		chkconfig iptables off
+
+		ifup ens160
+		hostnamectl set-hostname vma1
+		systemctl stop firewalld.service
+		systemctl disable firewalld.service
+		sed -i -e 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 		ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
 		reboot
 
   - on vma2
 
-		sed -i -e 's/HOSTNMAE=.*/HOSTNAME=vma2/' /etc/sysconfig/network 
-		sed -i -e 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 
-		chkconfig iptables off
+		ifup ens160
+		hostnamectl set-hostname vma2
+		systemctl stop firewalld.service
+		systemctl disable firewalld.service
+		sed -i -e 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 		ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
 		reboot
 
@@ -188,34 +184,17 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 		# Delete unnecessary files
 		rm -rf ecx41l_x64/ ecx41l_x64.zip
 
-		reboot
-
 - Reconfigure IP address
 
   - on vma1
 
-		#!/bin/sh -ue
-		f=/etc/sysconfig/network-scripts/ifcfg-eth0
-		sed -i -e 's/BOOTPROTO=.*/BOOTPROTO=none/' $f
-		sed -i -e 's/ONBOOT=no/ONBOOT=yes/' $f
-		cat << __EOF__ >> $f
-		IPADDR=172.31.255.6
-		NETMASK=255.255.255.0
-		BROADCAST=172.31.255.255
-		__EOF__
+		nmcli c m ens160 ipv4.method manual ipv4.addresses 172.31.255.6/24 connection.autoconnect yes
+		reboot
 
   - on vma2
 
-		#!/bin/sh -ue
-		f=/etc/sysconfig/network-scripts/ifcfg-eth0
-		sed -i -e 's/BOOTPROTO=.*/BOOTPROTO=none/' $f
-		sed -i -e 's/ONBOOT=no/ONBOOT=yes/' $f
-		cat << __EOF__ >> $f
-		IPADDR=172.31.255.7
-		NETMASK=255.255.255.0
-		BROADCAST=172.31.255.255
-		__EOF__
-
+		nmcli c m ens160 ipv4.method manual ipv4.addresses 172.31.255.7/24 connection.autoconnect yes
+		reboot
 
 ## Revision history
 2017.02.03	Miyamoto Kazuyuki	1st issue  
