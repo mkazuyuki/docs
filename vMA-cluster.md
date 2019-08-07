@@ -153,8 +153,10 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 		reboot
 
 - Install vCLI
+
   - Download vCLI package and install according to its document
-    - package
+
+    - package : VMware-vSphere-CLI-6.7.0-8156551.x86_64.tar.gz
 
       https://code.vmware.com/web/tool/6.7/vsphere-cli  
 
@@ -163,38 +165,105 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
       https://code.vmware.com/docs/6526/getting-started-with-vsphere-command-line-interfaces
 
       in the above URL there is [the document for installation](https://code.vmware.com/docs/6526/getting-started-with-vsphere-command-line-interfaces#/doc/GUID-38C02094-CEE2-469E-8FB9-5453DA416623.html).  
+
+      <!--
       As supplemental, refer to the document [howto-make-vma-vm](https://github.com/mkazuyuki/docs/blob/master/etc/howto-make-vma-vm.md).
+      -->
+
+  - Login to the vMA1, 2 with root user. Bring up the NIC.
+
+		# ifup ens160
+
+  <!--
+  - If proxy server is required for accessing the internet
+
+	# export http_proxy=http://YOUR_PROXY_HOST:PORT
+	# export ftp_proxy=http://YOUR_PROXY_HOST:PORT
+  -->
+
+  - Setup accessing EPEL package repository
+
+		# yum -y install epel-release
+		# sed -i "s/metalink=https/metalink=http/" /etc/yum.repos.d/epel.repo
+
+  - Install packages required for vCLI
+
+		yum -y install e2fsprogs-devel libuuid-devel openssl-devel perl-devel
+		yum -y install glibc.i686 zlib.i686 gcc
+		yum -y install perl-XML-LibXML libncurses.so.5 perl-Crypt-SSLeay
+		yum -y install perl-Time-Piece perl-Archive-Zip perl-Try-Tiny perl-Socket6 perl-YAML
+		yum -y install perl-Path-Class perl-Text-Template perl-Net-INET6Glue perl-version
+		yum -y install perl-CPAN
+
+  - Run *cpan* to install perl modules
+
+		# cpan
+		:
+		[yes]
+		:
+		[local::lib]
+		:
+		[yes]
+		:
+
+  - You will see the following error then back to shell prompt. Refer to [VMmware KB 2038990](https://kb.vmware.com/s/article/2033341) about the error. 
+
+		Can't call method "http" on unblessed reference at /usr/share/perl5/CPAN/FirstTime.pm line 1866.
+
+  - Do the followings for fixing *FirstTime.pm*. 
+
+		# curl -O http://cpan.metacpan.org/authors/id/A/AN/ANDK/CPAN-2.27.tar.gz
+		# tar xzvf CPAN-2.27.tar.gz
+		# cp CPAN-2.27/lib/CPAN/FirstTime.pm /usr/share/perl5/CPAN/FirstTime.pm
+
+  - Run *cpan* command and make default answers for the prompts. Then you reach to cpan prompt, Input following commands.
+
+		# cpan
+		:
+		cpan[1]> o conf prerequisites_policy follow
+		cpan[2]> o conf commit
+		cpan[3]> install Devel::CheckLib
+		cpan[4]> q
+
+		# cpan
+		cpan[1]> install UUID
+		cpan[2]> install LWP::Protocol::https
+		cpan[3]> q
+
+  - Put vCLI package on the server then install it.
+
+		# tar xzvf VMware-vSphere-CLI-6.7.0-8156551.x86_64.tar.gz
+		# ./vmware-vsphere-cli-distrib/vmware-install.pl
 
 - Install EC
   - Login to vma1 and vma2 then execute following commands.
+  - Download, unzip, install the packeage then install the license 
 
-		# Download the zipped packeage
-		curl -O https://www.nec.com/en/global/prod/expresscluster/en/trial/zip/ecx41l_x64.zip
+		# curl -O https://www.nec.com/en/global/prod/expresscluster/en/trial/zip/ecx41l_x64.zip
+		# yum install unzip
+		# unzip ecx411_x64.zip
+		# rpm -ivh ecx41l_x64/Linux/4.1/en/server/expresscls-4.1.1-1.x86_64.rpm
+		# clplcnsc -I [YOUR_LICENSE_FILE]
 		
-		# Unzip the package
-		yum install unzip
-		unzip ecx411_x64.zip
-		
-		# Install the package
-		rpm -ivh ecx41l_x64/Linux/4.1/en/server/expresscls-4.1.1-1.x86_64.rpm
-		
-		# Install the license
-		clplcnsc -I [YOUR_LICENSE_FILE]
-		
-		# Delete unnecessary files
-		rm -rf ecx41l_x64/ ecx41l_x64.zip
+  - Delete unnecessary files
+
+		# rm -rf ecx41l_x64/ ecx41l_x64.zip
+
+- Install VMware Tools
+
+		# yum install open-vm-tools
 
 - Reconfigure IP address
 
   - on vma1
 
-		nmcli c m ens160 ipv4.method manual ipv4.addresses 172.31.255.6/24 connection.autoconnect yes
-		reboot
+		# nmcli c m ens160 ipv4.method manual ipv4.addresses 172.31.255.6/24 connection.autoconnect yes
+		# systemctl restart network
 
   - on vma2
 
-		nmcli c m ens160 ipv4.method manual ipv4.addresses 172.31.255.7/24 connection.autoconnect yes
-		reboot
+		# nmcli c m ens160 ipv4.method manual ipv4.addresses 172.31.255.7/24 connection.autoconnect yes
+		# systemctl restart netwrok
 
 ## Revision history
 2017.02.03	Miyamoto Kazuyuki	1st issue  
