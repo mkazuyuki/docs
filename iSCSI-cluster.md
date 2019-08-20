@@ -17,6 +17,13 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 
 ### Nodes configuration
 
+|Virtual HW	|Number, Amount	|
+|:--		|:---		|
+| vCPU		| 4 CPU		| 
+| Memory	| 8 GB		|
+| vNIC		| 3 ports       |
+| vHDD		| 6 GB for OS<br>500 GB for MD1<br>500 GB for MD2 |
+
 |				| Primary		| Secondary		|
 |---				|---			|---			|
 | Hostname			| iscsi1		| iscsi2		|
@@ -42,12 +49,151 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 
 ### Creating VMs on both ESXi
 
-|Virtual HW	|Number, Amount	|
-|:--		|:---		|
-| vCPU		| 4 CPU		| 
-| Memory	| 8 GB		|
-| vNIC		| 3 ports       |
-| vHDD		| 6 GB for OS<br>500 GB for MD1<br>500 GB for MD2 |
+- Download CetOS 7.6 (CentOS-7-x86_64-Minimal-1810.iso) and put it on /vmfs/volumes/datastore1/iso of esxi1 and esxi2.
+
+- Run the below script
+
+  - on esxi1
+
+		#!/bin/sh -ue
+
+		#
+		# iSCSI VM
+		#
+
+		# (0) Parameters
+		DATASTORE_PATH=/vmfs/volumes/datastore1
+		#ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7-x86_64-Minimal-1810.iso
+		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7.6-x86_64-Minimal-1810.iso
+		VM_NAME=iSCSI1
+		VM_CPU_NUM=4
+		VM_MEM_SIZE=8192
+		VM_NETWORK_NAME1="VM Network"
+		VM_NETWORK_NAME2="Mirror_portgroup"
+		VM_NETWORK_NAME3="iSCSI_portgroup"
+		VM_GUEST_OS=centos7-64
+		VM_CDROM_DEVICETYPE=cdrom-image  # cdrom-image / atapi-cdrom
+		VM_DISK_SIZE1=6G
+		VM_DISK_SIZE2=500G
+
+		VM_DISK_PATH1=$DATASTORE_PATH/$VM_NAME/${VM_NAME}.vmdk
+		VM_DISK_PATH2=$DATASTORE_PATH/$VM_NAME/${VM_NAME}_1.vmdk
+		VM_VMX_FILE=$DATASTORE_PATH/$VM_NAME/$VM_NAME.vmx
+
+		# (1) Create dummy VM
+		VM_ID=`vim-cmd vmsvc/createdummyvm $VM_NAME $DATASTORE_PATH`
+
+		# (2) Edit vmx file
+		sed -i -e '/^guestOS /d' $VM_VMX_FILE
+		sed -i -e 's/lsilogic/pvscsi/' $VM_VMX_FILE
+		cat << __EOF__ >> $VM_VMX_FILE
+		guestOS = "$VM_GUEST_OS"
+		numvcpus = "$VM_CPU_NUM"
+		memSize = "$VM_MEM_SIZE"
+		scsi0.virtualDev = "pvscsi"
+		scsi0:1.deviceType = "scsi-hardDisk"
+		scsi0:1.fileName = "$VM_NAME_1.vmx"
+		scsi0:1.present = "TRUE"
+		ethernet0.virtualDev = "vmxnet3"
+		ethernet0.present = "TRUE"
+		ethernet0.networkName = "$VM_NETWORK_NAME1"
+		ethernet0.addressType = "generated"
+		ethernet0.wakeOnPcktRcv = "FALSE"
+		ethernet1.virtualDev = "vmxnet3"
+		ethernet1.present = "TRUE"
+		ethernet1.networkName = "$VM_NETWORK_NAME2"
+		ethernet1.addressType = "generated"
+		ethernet1.wakeOnPcktRcv = "FALSE"
+		ethernet2.virtualDev = "vmxnet3"
+		ethernet2.present = "TRUE"
+		ethernet2.networkName = "$VM_NETWORK_NAME3"
+		ethernet2.addressType = "generated"
+		ethernet2.wakeOnPcktRcv = "FALSE"
+		ide0:0.present = "TRUE"
+		ide0:0.deviceType = "$VM_CDROM_DEVICETYPE"
+		ide0:0.fileName = "$ISO_FILE"
+		tools.syncTime = "TRUE"
+		__EOF__
+
+		# (3) Extend disk size
+		vmkfstools --extendvirtualdisk $VM_DISK_SIZE1 --diskformat eagerzeroedthick $VM_DISK_PATH1
+
+		# (4) Create disk
+		vmkfstools --createvirtualdisk $VM_DISK_SIZE2 --diskformat eagerzeroedthick $VM_DISK_PATH2
+
+		# (5) Reload VM information
+		vim-cmd vmsvc/reload $VM_ID
+
+  - on esxi2
+
+		#!/bin/sh -ue
+
+		#
+		# iSCSI VM
+		#
+
+		# (0) Parameters
+		DATASTORE_PATH=/vmfs/volumes/datastore1
+		#ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7-x86_64-Minimal-1810.iso
+		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7.6-x86_64-Minimal-1810.iso
+		VM_NAME=iSCSI2
+		VM_CPU_NUM=4
+		VM_MEM_SIZE=8192
+		VM_NETWORK_NAME1="VM Network"
+		VM_NETWORK_NAME2="Mirror_portgroup"
+		VM_NETWORK_NAME3="iSCSI_portgroup"
+		VM_GUEST_OS=centos7-64
+		VM_CDROM_DEVICETYPE=cdrom-image  # cdrom-image / atapi-cdrom
+		VM_DISK_SIZE1=6G
+		VM_DISK_SIZE2=500G
+
+		VM_DISK_PATH1=$DATASTORE_PATH/$VM_NAME/${VM_NAME}.vmdk
+		VM_DISK_PATH2=$DATASTORE_PATH/$VM_NAME/${VM_NAME}_1.vmdk
+		VM_VMX_FILE=$DATASTORE_PATH/$VM_NAME/$VM_NAME.vmx
+
+		# (1) Create dummy VM
+		VM_ID=`vim-cmd vmsvc/createdummyvm $VM_NAME $DATASTORE_PATH`
+
+		# (2) Edit vmx file
+		sed -i -e '/^guestOS /d' $VM_VMX_FILE
+		sed -i -e 's/lsilogic/pvscsi/' $VM_VMX_FILE
+		cat << __EOF__ >> $VM_VMX_FILE
+		guestOS = "$VM_GUEST_OS"
+		numvcpus = "$VM_CPU_NUM"
+		memSize = "$VM_MEM_SIZE"
+		scsi0.virtualDev = "pvscsi"
+		scsi0:1.deviceType = "scsi-hardDisk"
+		scsi0:1.fileName = "$VM_NAME_1.vmx"
+		scsi0:1.present = "TRUE"
+		ethernet0.virtualDev = "vmxnet3"
+		ethernet0.present = "TRUE"
+		ethernet0.networkName = "$VM_NETWORK_NAME1"
+		ethernet0.addressType = "generated"
+		ethernet0.wakeOnPcktRcv = "FALSE"
+		ethernet1.virtualDev = "vmxnet3"
+		ethernet1.present = "TRUE"
+		ethernet1.networkName = "$VM_NETWORK_NAME2"
+		ethernet1.addressType = "generated"
+		ethernet1.wakeOnPcktRcv = "FALSE"
+		ethernet2.virtualDev = "vmxnet3"
+		ethernet2.present = "TRUE"
+		ethernet2.networkName = "$VM_NETWORK_NAME3"
+		ethernet2.addressType = "generated"
+		ethernet2.wakeOnPcktRcv = "FALSE"
+		ide0:0.present = "TRUE"
+		ide0:0.deviceType = "$VM_CDROM_DEVICETYPE"
+		ide0:0.fileName = "$ISO_FILE"
+		tools.syncTime = "TRUE"
+		__EOF__
+
+		# (3) Extend disk size
+		vmkfstools --extendvirtualdisk $VM_DISK_SIZE1 --diskformat eagerzeroedthick $VM_DISK_PATH1
+
+		# (4) Create disk
+		vmkfstools --createvirtualdisk $VM_DISK_SIZE2 --diskformat eagerzeroedthick $VM_DISK_PATH2
+
+		# (5) Reload VM information
+		vim-cmd vmsvc/reload $VM_ID
 
 On both iSCSI Target VMs,
 
@@ -91,7 +237,7 @@ On both iSCSI Target VMs,
 
   - for iscsi2 :
 
-	The procedure is almost same as iscsi1. ogin then configure so that can access the internet for using *yum* command. The IP address in the below (192.168.137.12/24) is just an example.
+	The procedure is almost same as iscsi1. Login then configure so that can access the internet for using *yum* command. The IP address in the below (192.168.137.12/24) is just an example.
 
 		hostnamectl set-hostnme iscsi2
 		systemctrl stop firewalld.service
