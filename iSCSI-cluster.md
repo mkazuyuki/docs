@@ -53,6 +53,8 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 
 - Run the below script
 
+  you can specify disk size for iSCSI Datastore as you like at the line of "VM_DISK_SIZE2=500G" 
+
   - on esxi1
 
 		#!/bin/sh -ue
@@ -63,8 +65,7 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 
 		# (0) Parameters
 		DATASTORE_PATH=/vmfs/volumes/datastore1
-		#ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7-x86_64-Minimal-1810.iso
-		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7.6-x86_64-Minimal-1810.iso
+		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7-x86_64-Minimal-1810.iso
 		VM_NAME=iSCSI1
 		VM_CPU_NUM=4
 		VM_MEM_SIZE=8192
@@ -90,9 +91,8 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 		guestOS = "$VM_GUEST_OS"
 		numvcpus = "$VM_CPU_NUM"
 		memSize = "$VM_MEM_SIZE"
-		scsi0.virtualDev = "pvscsi"
 		scsi0:1.deviceType = "scsi-hardDisk"
-		scsi0:1.fileName = "$VM_NAME_1.vmx"
+		scsi0:1.fileName = "${VM_NAME}_1.vmdk"
 		scsi0:1.present = "TRUE"
 		ethernet0.virtualDev = "vmxnet3"
 		ethernet0.present = "TRUE"
@@ -134,8 +134,7 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 
 		# (0) Parameters
 		DATASTORE_PATH=/vmfs/volumes/datastore1
-		#ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7-x86_64-Minimal-1810.iso
-		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7.6-x86_64-Minimal-1810.iso
+		ISO_FILE=/vmfs/volumes/datastore1/iso/CentOS-7-x86_64-Minimal-1810.iso
 		VM_NAME=iSCSI2
 		VM_CPU_NUM=4
 		VM_MEM_SIZE=8192
@@ -161,9 +160,8 @@ This guide provides how to create iSCSI Target cluster (with block device backst
 		guestOS = "$VM_GUEST_OS"
 		numvcpus = "$VM_CPU_NUM"
 		memSize = "$VM_MEM_SIZE"
-		scsi0.virtualDev = "pvscsi"
 		scsi0:1.deviceType = "scsi-hardDisk"
-		scsi0:1.fileName = "$VM_NAME_1.vmx"
+		scsi0:1.fileName = "${VM_NAME}_1.vmdk"
 		scsi0:1.present = "TRUE"
 		ethernet0.virtualDev = "vmxnet3"
 		ethernet0.present = "TRUE"
