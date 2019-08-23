@@ -56,7 +56,7 @@ exit $val;
 #-------------------------------------------------------------------------------
 sub iscsiRecovery{
 	my $ret = -1;
-	my $cmd = "esxcli --server $vmk iscsi session list --adapter=$vmhba";
+	my $cmd = "ssh $vmk esxcli iscsi session list --adapter=$vmhba";
 	&execution($cmd);
 	foreach(@lines){
 		chomp;
@@ -72,7 +72,7 @@ sub iscsiRecovery{
 		&Log("[I][iscsiRecovery] no session with [$vmhba] found\n");
 	}
 	
-	$cmd = "esxcli --server $vmk iscsi session add --adapter=$vmhba";
+	$cmd = "ssh $vmk esxcli iscsi session add --adapter=$vmhba";
 	$ret = &execution($cmd);
 	foreach(@lines){
 		chomp;
@@ -117,7 +117,7 @@ sub Monitor{
 			&Log("[D] \t$b\n");
 		}
 		&Log("[I] on LOCAL  [$vmk] VM ID [$_] was unregistered\n");
-		execution("clplogcmd -m \"invalid VM ID [$_] was unregistered on [$vmk]\n\"");
+		&execution("clplogcmd -m \"invalid VM ID [$_] was unregistered on [$vmk]\n\"");
 	}
 
 	# Checking Powerstatus of each registered VMs on Local node
@@ -167,7 +167,7 @@ sub Monitor{
 						&Log("[D] \t$_\n");
 					}
 					&Log("[I] on LOCAL  [$vmk] [$a][$vmx{$a}] was unregistered\n");
-					execution("clplogcmd -m \"VM [$vmx{$a}][$a] was unregistered on [$vmk]\n\"");
+					&execution("clplogcmd -m \"VM [$vmx{$a}][$a] was unregistered on [$vmk]\n\"");
 				} else {
 					&Log("[D] on LOCAL  [$vmk] do nothing for [$a][$vmx{$a}]\n");
 				}
@@ -189,7 +189,6 @@ sub execution {
 	#} 
 	close($h); 
 	&Log(sprintf("[D] result    ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
-	#&Log(sprintf("[D] executing ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
 	return $?;
 }
 
