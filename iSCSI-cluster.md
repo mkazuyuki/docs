@@ -396,10 +396,10 @@ for md2 do the same like md1 by using
     - [Edit]
       - write $VMNAME1 = "iscsi1" as VM name in the esxi1 inventory
       - write $VMNAME2 = "iscsi2" as VM name in the esxi2 inventory
-      - write $VMIP1 = "172.31.255.11" as IP address for iscsi1
-      - write $VMIP2 = "172.31.255.12" as IP address for iscsi2
-      - write $VMK1 = "172.31.254.21" as IP address of esxi1 accessing from iscsi1
-      - write $VMK2 = "172.31.254.22" as IP address of esxi2 accessing from iscsi2
+      - write $VMIP1 = "172.31.255.11" as IP address of iscsi1
+      - write $VMIP2 = "172.31.255.12" as IP address of iscsi2
+      - write $VMK1 = "172.31.255.2" as IP address of esxi1 accessing from iscsi1
+      - write $VMK2 = "172.31.255.3" as IP address of esxi2 accessing from iscsi2
     - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Path] > check [Rotate Log] > [Next]
   - [Recovery Action] section
     - select [Execute only the final action] as [Recovery Action]
