@@ -9,7 +9,7 @@
 #
 
 my $SLEEP = 10;	# seconds for sleep in loop
-my $name_md = "";
+my @name_md = ();
 my @lines = ();
 my $ret   = 0;
 
@@ -27,41 +27,42 @@ if ($ENV{"CLP_EVENT"} ne "START") {
 &execution("clpmdstat -l");
 foreach (@lines) {
 	if (/<(.*)>/) {
-		$name_md = $1;
-		last;
+		push(@name_md, $1);
+		&Log("[D] name_md = [$1]\n");
 	}
 }
-&Log("name_md = [$name_md]\n");
 
-while(1){
-	my $flag = 0;
-	&execution("clpmdstat -m $name_md");
-	foreach (@lines) {
-		if (/Mirror Status: No Construction/) {
-			&Log("[W] Skip, since mirror is not constructed\n");
-			$flag = 1;
-			last;
+foreach $md (@name_md){
+	while(1){
+		my $flag = 0;
+		&execution("clpmdstat -m $md");
+		foreach (@lines) {
+			if (/Mirror Status: No Construction/) {
+				&Log("[W] Skip, since mirror is not constructed\n");
+				$flag = 1;
+				last;
+			}
+			if (/Mirror Color\s+?RED\s+(RED|GRAY)/) {
+				&execution("yes | clpmdctrl -f $md");
+				&execution("clplogcmd -m \"[exec-md-recovery] changed [$md] from RED-[$1] to GREEN-[$1] $1\"");
+				last;
+			}
+			elsif (/Mirror Color\s+?RED\s+GREEN/) {
+				# Giving up recovery then failover
+				&execution("clplogcmd -m \"[exec-md-recovery] MD [$md] status is RED - GREEN\"");
+				$flag = 1;
+				$ret = 1;
+				last;
+			}
+			elsif (/Mirror Color\s+?GREEN\s+(\S+)/) {
+				&execution("clplogcmd -m \"[exec-md-recovery] MD [$md] status is GREEN - [$1]\"");
+				$flag = 1;
+				last;
+			}
 		}
-		if (/Mirror Color\s+?RED\s+(RED|GRAY)/) {
-			&execution("yes | clpmdctrl -f $name_md");
-			&execution("clplogcmd -m \"[exec-md-recovery] changed [$name_md] from RED-[$1] to GREEN-[$1] $1\"");
-			last;
-		}
-		elsif (/Mirror Color\s+?RED\s+GREEN/) {
-			# Giving up recovery then failover
-			&execution("clplogcmd -m \"[exec-md-recovery] MD status is RED - GREEN\"");
-			$flag = 1;
-			$ret = 1;
-			last;
-		}
-		elsif (/Mirror Color\s+?GREEN\s+(\S+)/) {
-			&execution("clplogcmd -m \"[exec-md-recovery] MD status is GREEN - [$1]\"");
-			$flag = 1;
-			last;
-		}
+		last if ($flag);
+		sleep $SLEEP;
 	}
-	last if ($flag);
-	sleep $SLEEP;	
 }
 exit $ret;
 
@@ -73,7 +74,7 @@ sub execution {
 	@lines = <$h>;
 	foreach (@lines) {
 		chomp;
-		&Log("[D]\t$_\n");
+		&Log("[D] | $_\n");
 	} 
 	close($h); 
 	&Log(sprintf("[D] result ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
