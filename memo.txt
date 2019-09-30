@@ -36,7 +36,10 @@
 		- ESXi の Surprise PowerOff > PowerOn で (無効な)VM登録が残るへの対策を意図して
 			- invalid VM の削除
 			- iSCSI Datastore に入っていて、かつ、ESXi の inventory に登録されている VM の電源断 > 登録削除
-
+		- 「iSCSI Datastore が見つからなければ、*vicfg-volume --persistent-mount iSCSI* を実行する」ループを10秒毎に回す  
+		  ループに入った場合、別の場所で vmhba の rescan が実行される等、
+		  iSCSI接続の先にマウント対象のデバイスが見える状態にならないとループを抜けるきっかけが無いように思える。
+		
 	start.sh (vm-start.pl) がやっていること
 		- iSCSI Datastore が見つからなければ、vmhba をリスキャンして iSCSI接続を促す
 		- invalid VM の削除は登録処理が失敗した場合に行う。
