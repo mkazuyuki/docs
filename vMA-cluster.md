@@ -155,14 +155,9 @@ This guide provides how to create Management VM Cluster on EXPRESSCLUSTER for Li
 - Install vCLI
 
   - Download vCLI package and install according to its document
-
-    - package : VMware-vSphere-CLI-6.7.0-8156551.x86_64.tar.gz
-
-      https://code.vmware.com/web/tool/6.7/vsphere-cli  
-
-    - document
-
-      https://code.vmware.com/docs/6526/getting-started-with-vsphere-command-line-interfaces
+  	- package : [VMware-vSphere-CLI-6.7.0-8156551.x86_64.tar.gz](https://code.vmware.com/web/tool/6.7/vsphere-cli )
+  	
+	- document : https://code.vmware.com/docs/6526/getting-started-with-vsphere-command-line-interfaces
 
       in the above URL there is [the document for installation](https://code.vmware.com/docs/6526/getting-started-with-vsphere-command-line-interfaces#/doc/GUID-38C02094-CEE2-469E-8FB9-5453DA416623.html).  
 
