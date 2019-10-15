@@ -1,3 +1,10 @@
+2019.10.15	「C断線状態 → vma1 genw-nic-link が iscsi1, vma1 をリブート」がループしてしまう。保護対象VMはesxi2で稼働続行で問題無い。
+		しかし、A,B接続C断線状態が継続すると、iscsi1 ブート後のミラー復旧{中|後}に vma1 genw-nic-link が再度 iscsi1をリブートしてしまう。
+		(状態遷移がループしてしまうのも好ましくないが、現用系たる iscsi2 がミラーリカバリで性能劣化することを問題視されるのは避けたい)
+		そもそも genw-nic-link が導入されたのは、C断線 > vma2 NP認識で UCVM をFOする際、iscsi1がロックを掴んでいる状態を避けたいから。
+		解決案 : vMA cluster に iSCSI cluter のミラー経路 で HBさせるようにする。
+		genw-nic-link は UC用NICのみ監視。異常検出時は vma1 リブートにより UCVMs をFOさせる。
+		リブート後、vma1 の genw-nic-link は一度も正常検出をしないときに黙る仕組みが必要。あるいは mtw を使用する方法もあるか?
 2019.07.02	exec-md-recovery.pl が複数の md resource を制御できるように要改造
 2018.02.06	firewal が開けるべき port 番号をリストアップすること。
 2018.02.12	過去の入力パラメータを覚えておく仕組みを入れる。
