@@ -89,8 +89,8 @@ Start ssh service and configure it to start automatically.
 
 - Open vSphere Host Client
   - [Manage] in [Navigator] pane > [Services] tab
-    - [TSM-SSH] >  [Actions] > [Start]
-    - [TSM-SSH] >  [Actions] > [Polilcy] > [Start and stop with host]
+  	- [TSM-SSH] >  [Actions] > [Start]
+	- [TSM-SSH] >  [Actions] > [Polilcy] > [Start and stop with host]
 
 Configure ESXi network : vSwitch, Physical NICs, Port groups, VMkernel NIC for iSCSI Initiator
 
