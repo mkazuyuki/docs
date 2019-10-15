@@ -363,69 +363,69 @@ for md2 do the same like md1 by using
 #### Adding the first custom monitor resource for automatic MD recovery on Red(Active)-Red status
 - Click [Add monitor Resource] button in right side of [Monitors]
   - [Info] section
-    - select [Custom monitor] as [Type] > input *genw-md* as [Name] > [Next]
+  	- select [Custom monitor] as [Type] > input *genw-md* as [Name] > [Next]
   - [Monitor (common)] section
-    - input *60* as [Wait Time to Start Monitoring]
-    - select [Active] as [Monitor Timing]
-    - [Browse] button
-      - select [md1] > [OK]
-    - [Next]
+  	- input *60* as [Wait Time to Start Monitoring]
+	- select [Active] as [Monitor Timing]
+	- [Browse] button
+		- select [md1] > [OK]
+	- [Next]
   - [Monitor (special)] section
-    - [Replace]
-      - select *genw-md.pl* > [Open] > [Yes]
-    - input */opt/nec/clusterpro/log/genw-md.log* as [Log Output Path] > check [Rotate Log]
-    - [Next]
+  	- [Replace]
+		- select *genw-md.pl* > [Open] > [Yes]
+	- input */opt/nec/clusterpro/log/genw-md.log* as [Log Output Path] > check [Rotate Log]
+	- [Next]
   - [Recovery Action] section
-    - select [Execute only the final action] as [Recovery Action]
-    - [Browse]
-      - [LocalServer] > [OK]
-    - [Finish]
+  	- select [Execute only the final action] as [Recovery Action]
+	- [Browse]
+		- [LocalServer] > [OK]
+	- [Finish]
 
-<!--	TBD	genw-md2 の要否確認	-->
+<!--	TBD	genw-md2 ﾂづ個要ﾂ氾崢確ﾂ認	-->
 
 #### Adding the second custom monitor resource for keeping remote iSCSI VM and ECX online.
 - Click [Add monitor Resource] button in right side of [Monitors]
   - [Info] section
-    - select [Custom monitor] as [type] > input *genw-remote-node* as [Name]> [Next]
+  	- select [Custom monitor] as [type] > input *genw-remote-node* as [Name]> [Next]
   - [Monitor (common)] section
-    - select [Always] as [Monitor Timing]
-    - [Next]
+  	- select [Always] as [Monitor Timing]
+	- [Next]
   - [Monitor (special)] section
-    - [Replace]
-      - select *genw-remote-node.pl* > [Open] > [Yes]
-    - [Edit]
-      - write $VMNAME1 = "iscsi1" as VM name in the esxi1 inventory
-      - write $VMNAME2 = "iscsi2" as VM name in the esxi2 inventory
-      - write $VMIP1 = "172.31.255.11" as IP address of iscsi1
-      - write $VMIP2 = "172.31.255.12" as IP address of iscsi2
-      - write $VMK1 = "172.31.255.2" as IP address of esxi1 accessing from iscsi1
-      - write $VMK2 = "172.31.255.3" as IP address of esxi2 accessing from iscsi2
-    - input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Path] > check [Rotate Log] > [Next]
+  	- [Replace]
+		- select *genw-remote-node.pl* > [Open] > [Yes]
+	- [Edit]
+		- write $VMNAME1 = "iscsi1" as VM name in the esxi1 inventory
+		- write $VMNAME2 = "iscsi2" as VM name in the esxi2 inventory
+		- write $VMIP1 = "172.31.255.11" as IP address of iscsi1
+		- write $VMIP2 = "172.31.255.12" as IP address of iscsi2
+		- write $VMK1 = "172.31.255.2" as IP address of esxi1 accessing from iscsi1
+		- write $VMK2 = "172.31.255.3" as IP address of esxi2 accessing from iscsi2
+	- input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Path] > check [Rotate Log] > [Next]
   - [Recovery Action] section
-    - select [Execute only the final action] as [Recovery Action]
-    - [Browse]
-      - [LocalServer] > [OK]
-    - select [No operation] as [Final Action] > [Finish]
+  	- select [Execute only the final action] as [Recovery Action]
+	- [Browse]
+		- [LocalServer] > [OK]
+	- select [No operation] as [Final Action] > [Finish]
 
 #### Adding the third custom monitor resource for updating arp table
 - Click [Add monitor Resource] button in right side of [Monitors]
   - [Info] section
-    - select [Custom monitor] as [type] > input *genw-arpTable* as[Name] > [Next]
+  	- select [Custom monitor] as [type] > input *genw-arpTable* as[Name] > [Next]
   - [Monitor (common)] section
-    - input *30* as [Interval]
-    - select [Active] as [Monitor Timing]
-    - [Browse] button
-      - select [fip1] > [OK]
-    - [Next]
+  	- input *30* as [Interval]
+	- select [Active] as [Monitor Timing]
+	- [Browse] button
+		- select [fip1] > [OK]
+	- [Next]
   - [Monitor (special)] section
-    - [Replace]
-      - select *genw-arpTable.sh* > [Open] > [Yes]
-    - input */opt/nec/clusterpro/log/genw-arpTable.log* as [Log Output Paht] > check [Rotate Log] > [Next]
+  	- [Replace]
+		- select *genw-arpTable.sh* > [Open] > [Yes]
+	- input */opt/nec/clusterpro/log/genw-arpTable.log* as [Log Output Paht] > check [Rotate Log] > [Next]
   - [Recovery Action] section
-    - select [Execute only the final action] as [Recovery Action]
-    - [Browse]
-      - [LocalServer] > [OK]
-    - select [No operation] as [Final Action] > [Finish]
+  	- select [Execute only the final action] as [Recovery Action]
+	- [Browse]
+		- [LocalServer] > [OK]
+	- select [No operation] as [Final Action] > [Finish]
 
 #### Applying the configuration
 - Click [Apply the Configuration File]
