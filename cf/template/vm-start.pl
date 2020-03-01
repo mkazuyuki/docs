@@ -55,12 +55,12 @@ my %state = (
 	"VM_EXECUTION_STATE_UNKNOWN" => "unknown"
 );
 
-my $tmp = `ip address | grep $vma1`;
+my $tmp = `ip address | grep $vma1/`;
 if ($? == 0) {
 	$vmk = $vmk1;
 	$vmhba = $vmhba1;
 } else {
-	$tmp = `ip address | grep $vma2`;
+	$tmp = `ip address | grep $vma2/`;
 	if ($? == 0) {
 		$vmk = $vmk2;
 		$vmhba = $vmhba2;
