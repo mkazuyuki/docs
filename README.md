@@ -1,8 +1,6 @@
-
 # Howto setup HAUC
 
 This guide provides how to set up HAUC (Highly Available Unified Communications). The guide assumes its readers to have Linux system administration knowledge and skills with experience in installation and configuration of Storages, and Networks.
-
 
 ## Overview
 
@@ -14,12 +12,10 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 4. Connect ESXi hosts to the iSCSI Target.
 5. Deploy UC VMs
 6. Deploy and configure *vMA Cluster*.
-    
 
 ## Versions
 - vSphere ESXi 6.7
 - Strawberry Perl 5.30.0.1 (64bit)   (http://strawberryperl.com/)
-
 
 ## System Requirements and Planning
 
@@ -43,7 +39,7 @@ The general procedure to deploy HAUC on two ESXi server machines (Primary and St
 | root password			| passwd1		| passwd2		|
 |				|			|			|
 | IP address for Management	| 172.31.255.2		| 172.31.255.3		|
-| IP address for VMkernel1 [1]	| 172.31.254.2		| 172.31.254.3		|
+| IP address for VMkernel [1]	| 172.31.254.2		| 172.31.254.3		|
 | iSCSI Initiator WWN		| iqn.1998-01.com.vmware:1 | iqn.1998-01.com.vmware:2 |
 
 [1] for iSCSI Initiator
